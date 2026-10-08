@@ -1,6 +1,6 @@
 # Oops! My Schedule 😭
 
-Ứng dụng lịch trình cá nhân (Java Swing) **tự tái sắp xếp khi phát sinh sự cố**. Bạn lập lịch buổi sáng, ngủ quên 90 phút, lịch vỡ: chỉ cần báo "tôi trễ X phút" hoặc "tôi không làm được việc này", hệ thống tính lại phần còn lại và đưa **3 phương án** để bạn so sánh, chọn.
+Ứng dụng lịch trình cá nhân (Java Swing) **tự tái sắp xếp khi phát sinh sự cố**. Bạn lập lịch buổi sáng, ngủ quên 90 phút, lịch trình bị vỡ: chỉ cần báo "tôi trễ X phút" hoặc "tôi không làm được việc này", hệ thống sẽ tính lại phần còn lại và đưa **3 phương án** để bạn so sánh và chọn lựa, sau đó hệ thống sẽ xếp lại lịch trong ngày.
 
 Đây là đồ án môn **Lập trình ứng dụng** của sinh viên. Toàn bộ quá trình tính lịch được tính toán theo luật (rule-based), **không dùng AI lúc chạy** để kết quả giải thích được với người dùng.
 
