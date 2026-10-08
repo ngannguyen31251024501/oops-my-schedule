@@ -1,0 +1,16 @@
+# IntelliJ / editor
+.idea/
+*.iml
+out/
+.vscode/
+
+# Maven build
+target/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# File tạm / log
+*.log
+*.tmp
