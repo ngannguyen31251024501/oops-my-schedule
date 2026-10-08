@@ -2,7 +2,7 @@
 
 Ứng dụng lịch trình cá nhân (Java Swing) **tự tái sắp xếp khi phát sinh sự cố**. Bạn lập lịch buổi sáng, ngủ quên 90 phút, lịch vỡ: chỉ cần báo "tôi trễ X phút" hoặc "tôi không làm được việc này", hệ thống tính lại phần còn lại và đưa **3 phương án** để bạn so sánh, chọn.
 
-Đồ án môn **Lập trình ứng dụng** (ĐH Kinh tế TP.HCM, năm học 2026–2027), nhóm 5 người. Toàn bộ tính toán theo luật (rule-based), **không dùng AI lúc chạy** để kết quả giải thích được với người dùng.
+Đây là đồ án môn **Lập trình ứng dụng** của sinh viên. Toàn bộ quá trình tính lịch được tính toán theo luật (rule-based), **không dùng AI lúc chạy** để kết quả giải thích được với người dùng.
 
 > Tài liệu gốc của nhóm: *GĐ1 – Task 1: Phân tích yêu cầu – Bản thống nhất (v2)*, *Tài liệu thiết kế*, *Kế hoạch phân công chi tiết 7 ngày*. README này dùng đúng mã FR / BR / INV / CT / K / Q / T trong Task 1.
 
@@ -10,7 +10,7 @@
 
 ## 1. Ý tưởng cốt lõi
 
-**Ba luật cứng**
+**Ba luật chính của app**
 
 1. `FixedEvent` (giờ học, họp, xe bus) **không bao giờ bị dời**.
 2. **Không nén thời lượng**: việc 60 phút vẫn phải là 60 phút, chỉ được đặt vào khe trống **liên tục** đủ dài (BR-01).
@@ -29,7 +29,7 @@
 
 ---
 
-## 2. Trạng thái hiện tại và phạm vi tuần này
+## 2. Trạng thái hiện tại và phạm vi công việc hiện tại
 
 **Code demo (`oopsmyschedule_da_sua_15`)**: biên dịch được; `KiemThu.java` chạy **33 PASS, 0 FAIL**. Chưa có package `controller/`; `MainFrame.java` (756 dòng) còn chứa logic "áp dụng phương án + chuyển ngày mai" (khoảng dòng 578–630) và nút "Bỏ qua" (dòng 511–512) cần tách.
 
@@ -104,7 +104,7 @@ docs/                               tài liệu nhóm (mục 6)
 
 ---
 
-## 5. Điểm OOP (dẫn vào báo cáo)
+## 5. OOP
 
 - **Trừu tượng**: `ScheduleItem.coTheDoiLich()/xuLyKhiBiTre()/moTaTrangThai()` và `Disruption.apDung()` là abstract; `ReplanStrategy` là interface thuần.
 - **Kế thừa**: `ScheduleItem` → 4 lớp con; `Disruption` → 2 lớp con; `AbstractReplanStrategy` → 3 chiến lược.
@@ -158,7 +158,7 @@ Quy tắc tạm đã chốt: khi áp dụng phương án mà việc bị đề x
 
 ## 8. Dùng AI trong đồ án
 
-Đề bài khuyến khích dùng AI như trợ lý lập trình và yêu cầu báo cáo ghi lại prompt tiêu biểu kèm nhận xét, đánh giá. Mỗi người ghi **ngay khi dùng** vào `docs/06_AI_Log/<mã>.md` theo mẫu 5 dòng (dùng để làm gì → AI đề xuất gì → nhóm dùng/sửa gì → kiểm chứng thế nào → nhận xét, đánh giá). Code do AI sinh vẫn phải qua test, review PR và đối chiếu với `02_MethodContract.md`; AI hay bịa method hoặc quan hệ không có trong code nên luôn kiểm lại.
+Yêu cầu môn học khuyến khích dùng AI như trợ lý lập trình và yêu cầu báo cáo ghi lại prompt tiêu biểu kèm nhận xét, đánh giá. Mỗi người ghi **ngay khi dùng** vào `docs/06_AI_Log/<mã>.md` theo mẫu 5 dòng (dùng để làm gì → AI đề xuất gì → nhóm dùng/sửa gì → kiểm chứng thế nào → nhận xét, đánh giá). Code do AI sinh vẫn phải qua test, review PR và đối chiếu với `02_MethodContract.md`; AI hay bịa method hoặc quan hệ không có trong code nên luôn kiểm lại.
 
 ---
 
