@@ -12,6 +12,8 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Comparator;
+import java.util.Objects;
 
 /**
  * Lịch trình của 1 ngày cụ thể — chứa danh sách {@link ScheduleItem}.
@@ -22,7 +24,7 @@ public class DaySchedule {
 
     private final LocalDate ngay;
     private final List<ScheduleItem> danhSachItem = new ArrayList<>();
-
+    private final List<ScheduleItem> chuaXepLich = new ArrayList<>();
     /**
      * Đếm số việc người dùng chủ động XÓA/HỦY trong ngày (khác với việc bị
      * ReplanEngine "đề xuất bỏ" rồi chuyển sang ngày mai) — dùng cho
@@ -51,20 +53,39 @@ public class DaySchedule {
      * FixedEvent đã có trong lịch → ném {@link IllegalArgumentException},
      * không lưu item mới (đúng TC-01 trong tài liệu thiết kế).
      */
+
     public void themItem(ScheduleItem item) {
         if (item == null) {
-            throw new IllegalArgumentException("Không thể thêm item null vào lịch.");
+            throw new IllegalArgumentException(
+                    "Không thể thêm item null vào lịch.");
         }
+
+        boolean trungId = danhSachItem.stream()
+                .anyMatch(cu -> Objects.equals(cu.getId(), item.getId()));
+
+        boolean trungIdChuaXep = chuaXepLich.stream()
+                .anyMatch(cu -> Objects.equals(cu.getId(), item.getId()));
+
+        if (trungId || trungIdChuaXep) {
+            throw new IllegalArgumentException(
+                    "Đã tồn tại công việc có ID: " + item.getId());
+        }
+
         if (item instanceof FixedEvent) {
             for (ScheduleItem cu : danhSachItem) {
                 if (cu instanceof FixedEvent && cu.trung(item)) {
                     throw new IllegalArgumentException(
-                        "Việc cố định \"" + item.getTen() + "\" (" + item.getGioBatDau() + "-" + item.getGioKetThuc()
-                        + ") bị trùng giờ với việc cố định đã có \"" + cu.getTen()
-                        + "\" (" + cu.getGioBatDau() + "-" + cu.getGioKetThuc() + ").");
+                            "Việc cố định \"" + item.getTen()
+                                    + "\" (" + item.getGioBatDau() + "-"
+                                    + item.getGioKetThuc()
+                                    + ") bị trùng giờ với việc cố định đã có \""
+                                    + cu.getTen() + "\" ("
+                                    + cu.getGioBatDau() + "-"
+                                    + cu.getGioKetThuc() + ").");
                 }
             }
         }
+
         danhSachItem.add(item);
         sapXepTheoGio();
     }
@@ -101,6 +122,43 @@ public class DaySchedule {
         return Collections.unmodifiableList(nhatKySuCo);
     }
 
+    /** Thêm công việc chưa xếp được vào danh sách chờ. */
+    public void themChuaXepLich(ScheduleItem item) {
+        if (item == null) {
+            throw new IllegalArgumentException(
+                    "Không thể thêm item null vào danh sách chưa xếp lịch.");
+        }
+
+        boolean trungIdTrongLich = danhSachItem.stream()
+                .anyMatch(cu -> Objects.equals(cu.getId(), item.getId()));
+
+        boolean trungIdChuaXep = chuaXepLich.stream()
+                .anyMatch(cu -> Objects.equals(cu.getId(), item.getId()));
+
+        if (trungIdTrongLich || trungIdChuaXep) {
+            throw new IllegalArgumentException(
+                    "Đã tồn tại công việc có ID: " + item.getId());
+        }
+
+        chuaXepLich.add(item);
+    }
+
+    /** Xóa công việc khỏi danh sách chưa xếp lịch theo ID. */
+    public boolean xoaChuaXepLich(ScheduleItem item) {
+        if (item == null) {
+            return false;
+        }
+
+        return chuaXepLich.removeIf(
+                cu -> Objects.equals(cu.getId(), item.getId()));
+    }
+
+    /** Trả về danh sách chỉ đọc, không cho bên ngoài sửa trực tiếp. */
+    public List<ScheduleItem> getChuaXepLich() {
+        return Collections.unmodifiableList(
+                new ArrayList<>(chuaXepLich));
+    }
+
     /** Dùng bởi ReplanEngine để ghi lại toàn bộ danh sách sau khi đã tái sắp xếp. */
     public void thayTheToanBo(List<ScheduleItem> danhSachMoi) {
         danhSachItem.clear();
@@ -109,7 +167,8 @@ public class DaySchedule {
     }
 
     private void sapXepTheoGio() {
-        danhSachItem.sort((a, b) -> a.getGioBatDau().compareTo(b.getGioBatDau()));
+        danhSachItem.sort(
+                Comparator.comparing(ScheduleItem::getGioBatDau));
     }
 
     /**
@@ -135,36 +194,70 @@ public class DaySchedule {
      * 23:59) đủ dài cho {@code thoiLuong}, quét qua các item đã có theo thứ
      * tự thời gian. Trả về {@code null} nếu không có khoảng nào đủ.
      */
-    public LocalTime timKhoangTrongDauTien(Duration thoiLuong) {
-        LocalTime cuoiNgay = LocalTime.of(23, 59);
-        List<ScheduleItem> daSapXep = new ArrayList<>(danhSachItem);
-        daSapXep.sort((a, b) -> a.getGioBatDau().compareTo(b.getGioBatDau()));
 
-        LocalTime conTro = LocalTime.MIDNIGHT;
-        for (ScheduleItem item : daSapXep) {
-            if (item.getGioBatDau().isAfter(conTro)) {
-                long phutTrong = Duration.between(conTro, item.getGioBatDau()).toMinutes();
-                if (phutTrong >= thoiLuong.toMinutes()) {
-                    return conTro;
-                }
-            }
-            if (item.getGioKetThuc().isAfter(conTro)) {
-                conTro = item.getGioKetThuc();
-            }
-        }
-        if (!conTro.isAfter(cuoiNgay)) {
-            long phutConLai = Duration.between(conTro, cuoiNgay).toMinutes();
-            if (phutConLai >= thoiLuong.toMinutes()) {
-                return conTro;
-            }
-        }
-        return null;
+    public LocalTime timKhoangTrongDauTien(Duration thoiLuong) {
+        return timKhoangTrongDauTien(thoiLuong, LocalTime.MIDNIGHT);
     }
 
     public LocalTime timKhoangTrongDauTien(
             Duration thoiLuong,
             LocalTime tuGio) {
+
+        if (thoiLuong == null || tuGio == null
+                || thoiLuong.isNegative() || thoiLuong.isZero()) {
+            return null;
+        }
+
+        List<ScheduleItem> daSapXep = new ArrayList<>(danhSachItem);
+        daSapXep.sort(
+                Comparator.comparing(ScheduleItem::getGioBatDau));
+
+        // Dùng giây trong ngày để kiểm tra chính xác tới ranh giới nửa đêm.
+        final long CUOI_NGAY = 24L * 60 * 60;
+        long conTro = tuGio.toSecondOfDay();
+
+        for (ScheduleItem item : daSapXep) {
+            long batDau = item.getGioBatDau().toSecondOfDay();
+            long ketThuc = item.getGioKetThuc().toSecondOfDay();
+
+            // Công việc đã kết thúc trước hoặc đúng con trỏ.
+            if (ketThuc <= conTro) {
+                continue;
+            }
+
+            // Có khoảng trống trước công việc hiện tại.
+            if (batDau > conTro) {
+                Duration khoangTrong =
+                        Duration.ofSeconds(batDau - conTro);
+
+                if (khoangTrong.compareTo(thoiLuong) >= 0) {
+                    return LocalTime.ofSecondOfDay(conTro);
+                }
+            }
+
+            // Công việc đang chiếm thời gian tại con trỏ:
+            // đẩy con trỏ đến giờ kết thúc của công việc.
+            if (ketThuc > conTro) {
+                conTro = ketThuc;
+            }
+
+            if (conTro >= CUOI_NGAY) {
+                return null;
+            }
+        }
+        // Kiểm tra khe trống cuối ngày, tính đến 00:00 ngày kế tiếp.
+        Duration khoangCuoiNgay =
+                Duration.ofSeconds(CUOI_NGAY - conTro);
+
+        if (khoangCuoiNgay.compareTo(thoiLuong) >= 0) {
+            return LocalTime.ofSecondOfDay(conTro);
+        }
+
         return null;
+    }
+
+    public boolean coDuCho(Duration thoiLuong, LocalTime tuGio) {
+        return timKhoangTrongDauTien(thoiLuong, tuGio) != null;
     }
 
     /**
@@ -231,11 +324,19 @@ public class DaySchedule {
      * "trước" trước khi ReplanEngine chỉnh sửa lịch "sau", nhờ vậy bảng so
      * sánh trước/sau không bị ảnh hưởng chéo do object bị mutate.
      */
+
     public DaySchedule saoChep() {
         DaySchedule ban = new DaySchedule(this.ngay);
+
         for (ScheduleItem item : this.danhSachItem) {
             ban.danhSachItem.add(saoChepItem(item));
         }
+
+        for (ScheduleItem item : this.chuaXepLich) {
+            ban.chuaXepLich.add(saoChepItem(item));
+        }
+
+        ban.khoiPhucTuFile(this.soDaHuy, this.nhatKySuCo);
         return ban;
     }
 
