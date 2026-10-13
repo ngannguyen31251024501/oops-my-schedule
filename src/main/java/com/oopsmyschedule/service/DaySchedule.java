@@ -161,6 +161,12 @@ public class DaySchedule {
         return null;
     }
 
+    public LocalTime timKhoangTrongDauTien(
+            Duration thoiLuong,
+            LocalTime tuGio) {
+        return null;
+    }
+
     /**
      * Dùng bởi {@link LuuLich#doc} để khôi phục lại 2 bộ đếm/nhật ký không
      * gắn với riêng 1 ScheduleItem nào ({@code soDaHuy}, {@code nhatKySuCo})
