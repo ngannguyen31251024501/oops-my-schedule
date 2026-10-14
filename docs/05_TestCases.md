@@ -1,16 +1,16 @@
 # 05_TestCases – Test Matrix + Bug log (Ngân)
 
 Quy tắc: chỉ tick ✅ khi **owner đã chạy test và có bằng chứng**. ☐ = chưa.
-Bằng chứng hiện có: `KiemThu.java` = 33 PASS / 0 FAIL (chạy ngày 14/10 trên code demo).
+Bằng chứng hiện có: `KiemThu.java` = 33 PASS / 0 FAIL (đã chạy). JUnit mới (`BoTheoDoiLichTest` 9, `ReminderServiceTest` 12): **JUnit (IntelliJ, 14/10): 69/69 PASS, gồm BoTheoDoiLichTest 9, ReminderServiceTest 12, DongHoTest 3, ScheduleItemTest 12, KiemThuJUnitTest 33**.
 
 ## Test Matrix
 | Module | Owner | Happy | Invalid | Boundary | Integration | Ghi chú |
 |---|---|---|---|---|---|---|
-| Domain (ScheduleItem…) | Trân | ✅ (TC-02..08) | ✅ (BONUS-3, TC-04) | ☐ T-02, T-04, T-05 | — | JUnit: `domain/ScheduleItemTest` (Ngân viết sẵn khung, chưa chạy IntelliJ) |
+| Domain (ScheduleItem…) | Trân | ✅ (TC-02..08) | ✅ (BONUS-3, TC-04) | ☐ T-02, T-04, T-05 | — | JUnit: `domain/ScheduleItemTest` (12 test) |
 | Data (DaySchedule, LuuLich) | Manh | ✅ (TC-01, BONUS-4) | ☐ T-19 trùng id | ☐ T-09 khe 59'/60' | ☐ T-18 Save→Load, file hỏng | |
 | Replan (Engine/Strategy/Apply) | Trúc | ✅ (VAL-01..04) | ☐ null reject | ☐ T-04 23:59, T-11 | ☐ T-12/13, T-14, T-20, T-21 | |
 | Controller | Tú | ☐ | ☐ ô trống / không phải số | ☐ T-24 trễ >600' | ☐ | |
-| Reminder / BoTheoDoiLich | Ngân | ✅ (BONUS-5/6, VAL-07..09) | ✅ (`BoTheoDoiLichTest` null) | ✅ T-22 (0,4,5,19,20 – chạy tay 14/10) | ☐ chạy JUnit | overload `idBoQua` (K-04) đã thêm |
+| Reminder / BoTheoDoiLich | Ngân | ✅ (`ReminderServiceTest` nhắc sắp tới giờ, BONUS-5/6, VAL-07..09) | ✅ (`BoTheoDoiLichTest` null) | ✅ T-22 (0,4,5,19,20); T-23 (15'/16'/0'/−1'; deadline r = 1441, 1440, 181, 180, 61, 60, 1, 0) | ✅ không tự Replan / không đổi lịch (BR-03): 2 test ở `BoTheoDoiLichTest`, 1 ở `ReminderServiceTest` | JUnit: `BoTheoDoiLichTest`, `ReminderServiceTest`, `DongHoTest` (chạy IntelliJ/Maven rồi ghi kết quả). overload `idBoQua` (K-04) đã thêm |
 
 ## Bug log
 | Bug ID | Test ID | Nội dung | Expected | Actual | Status | Owner |
