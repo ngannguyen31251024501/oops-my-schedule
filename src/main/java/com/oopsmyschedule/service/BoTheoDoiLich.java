@@ -6,6 +6,7 @@ import java.time.Duration;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Mô phỏng ý tưởng "app tự nhìn đồng hồ hệ thống, không cần bấm nút 'Tôi bị
@@ -24,9 +25,21 @@ public final class BoTheoDoiLich {
 
     /** Quét danh sách việc, trả về cảnh báo cho mỗi việc đã tới giờ mà chưa hoàn thành. */
     public static List<CanhBaoViec> quet(DaySchedule ds, LocalTime hienTai) {
+        return quet(ds, hienTai, Set.of());
+    }
+
+    /**
+     * Như {@link #quet(DaySchedule, LocalTime)} nhưng bỏ qua các việc có id nằm trong
+     * {@code idBoQua} (người dùng bấm "Bỏ qua" ở banner: chỉ ngừng nhắc, KHÔNG đánh dấu
+     * hoàn thành, KHÔNG xóa việc).
+     */
+    public static List<CanhBaoViec> quet(DaySchedule ds, LocalTime hienTai, Set<String> idBoQua) {
+        if (ds == null || hienTai == null || idBoQua == null) {
+            throw new IllegalArgumentException("ds, hienTai, idBoQua không được null.");
+        }
         List<CanhBaoViec> ketQua = new ArrayList<>();
         for (ScheduleItem item : ds.layLichHienTai()) {
-            if (item.isHoanThanh()) {
+            if (item.isHoanThanh() || idBoQua.contains(item.getId())) {
                 continue;
             }
             if (item.getGioBatDau().isAfter(hienTai)) {
