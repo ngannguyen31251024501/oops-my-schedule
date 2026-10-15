@@ -1,5 +1,5 @@
 # 02_MethodContract – đổi signature phải sửa file này TRƯỚC khi sửa code, rồi báo nhóm
-Dòng (MỚI) = chưa có trong code, cả nhóm đã đồng ý ở tin nhắn chốt.
+Dòng = chưa có trong code, cả nhóm đã đồng ý ở tin nhắn chốt.
 Quy ước lỗi chung: **IllegalArgumentException** cho đối số sai; **IllegalStateException** cho trạng thái không cho phép. Controller/UI không chứa business rule.
 
 | Method | Chủ | Input → Output | Exception / ghi chú |
