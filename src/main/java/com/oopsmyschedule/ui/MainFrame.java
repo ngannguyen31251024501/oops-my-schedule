@@ -365,7 +365,7 @@ public class MainFrame extends JFrame {
             if (moi != null) {
                 LocalDate ngayDich = dlg.layNgayDaChon();
                 try {
-                    layHoacTaoLich(ngayDich).themItem(moi);
+                    scheduleController.themViec(moi, ngayDich);
                     lamMoiTatCa();
                     capNhatTimelineChoNgayDangXem();
                     String moTa = "\"" + moi.getTen() + "\" · " + moi.getGioBatDau()
@@ -525,7 +525,7 @@ public class MainFrame extends JFrame {
             );
             lamMoiTatCa();
         } else if (chon == 2) { // Tôi đang trễ
-            moDialogBaoSuCo((int) c.getSoPhutTre());
+            moDialogBaoSuCo(Math.min((int) c.getSoPhutTre(), 1440)); c.getSoPhutTre();
         }
 
         // chọn "Bắt đầu" thì chỉ đóng banner, không làm gì thêm (người dùng tự biết đang làm).
@@ -592,7 +592,7 @@ public class MainFrame extends JFrame {
         // thẻ phương án qua "Xem thay đổi ▾", không cần 1 bước riêng nữa.
         PhuongAn daChon = canhBao.getPhuongAnDaChon();
 
-        ReplanController.KetQuaApDung ketQuaApDung;
+        KetQuaApDung ketQuaApDung;
 
         try {
             ketQuaApDung = replanController.apDungPhuongAn(daChon, ds, dongHo.layGioHienTai(), tieuDe);
@@ -608,15 +608,10 @@ public class MainFrame extends JFrame {
             return;
         }
 
-        int soChuyenNgayMai = ketQuaApDung.getSoChuyenNgayMai();
+        int soChuyenNgayMai = ketQuaApDung.getChuyenNgayMai().size();
         List<String> tenKhongTheSapXep =
-                ketQuaApDung.getTenKhongTheSapXep();
+                ketQuaApDung.getChuaXepLich().stream().map(ScheduleItem::getTen).toList();
         int soKhongTheSapXep = tenKhongTheSapXep.size();
-        daNhac.clear();
-        mascotPanel.capNhat(
-                MascotArt.BieuCam.VUI,
-                "Lịch mới đã được áp dụng! Cố lên nha bạn ơi 💪"
-        );
         daNhac.clear();
         mascotPanel.capNhat(
                 MascotArt.BieuCam.VUI,

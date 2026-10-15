@@ -11,7 +11,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.time.LocalTime;
 import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.List;
 
@@ -67,8 +66,8 @@ public class DisruptionDialog extends JDialog {
         JRadioButton radioTre = new JRadioButton("Tôi đang bị trễ", true);
         JPanel theTre = taoTheLuaChon(radioTre, "Lịch hiện tại bị chậm so với kế hoạch");
 
-        JSpinner spinnerPhut = new JSpinner(new SpinnerNumberModel(soPhutGoiY != null ? soPhutGoiY : 30, 1, 600, 5));
-        JPanel formTre = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 4));
+        int goiY = soPhutGoiY != null ? Math.min(soPhutGoiY, 1440) : 30;
+        JSpinner spinnerPhut = new JSpinner(new SpinnerNumberModel(goiY, 1, 1440, 5));        JPanel formTre = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 4));
         formTre.setOpaque(false);
         formTre.setBorder(BorderFactory.createEmptyBorder(2, 6, 8, 0));
         formTre.add(new JLabel("Số phút trễ:"));
@@ -112,7 +111,7 @@ public class DisruptionDialog extends JDialog {
                 super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
                 if (value instanceof ScheduleItem item) {
                     setText(BieuTuongViec.cua(item) + " " + item.getTen()
-                        + "(" + item.getGioBatDau().format(DateTimeFormatter.ofPattern("HH:mm")) + "–" + item.getGioKetThuc().format(DateTimeFormatter.ofPattern("HH:mm")) + ")");
+                            + "  (" + DinhDang.gio(item.getGioBatDau()) + "–" + DinhDang.gio(item.getGioKetThuc()) + ")");
                 }
                 return this;
             }

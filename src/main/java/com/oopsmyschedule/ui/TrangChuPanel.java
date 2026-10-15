@@ -103,7 +103,9 @@ public class TrangChuPanel extends JPanel {
         this.khiBamXong = callback;
     }
 
-    /** callback nhận vào "số phút trễ gợi ý" (null nếu gộp nhiều việc, không rõ dùng số nào làm gợi ý). */
+    /**
+     * callback nhận vào "số phút trễ gợi ý" (null nếu gộp nhiều việc, không rõ dùng số nào làm gợi ý).
+     */
     public void datHanhDongDieuChinhLich(Consumer<Integer> callback) {
         this.khiBamDieuChinhLich = callback;
     }
@@ -118,9 +120,9 @@ public class TrangChuPanel extends JPanel {
         noiDung.removeAll();
 
         List<CanhBaoViec> dangTre = canhBaoList.stream()
-            .filter(c -> c.getMucDo() != MucDoCanhBao.MOI_BAT_DAU).toList();
+                .filter(c -> c.getMucDo() != MucDoCanhBao.MOI_BAT_DAU).toList();
         List<CanhBaoViec> vuaBatDau = canhBaoList.stream()
-            .filter(c -> c.getMucDo() == MucDoCanhBao.MOI_BAT_DAU).toList();
+                .filter(c -> c.getMucDo() == MucDoCanhBao.MOI_BAT_DAU).toList();
 
         // Mèo nhỏ ở đầu Trang chủ đổi biểu cảm theo đúng trạng thái lịch hiện
         // tại — trở thành 1 phần của feedback UI thay vì chỉ trang trí.
@@ -163,7 +165,8 @@ public class TrangChuPanel extends JPanel {
                 noiDung.add(theBinhThuong(
                         item,
                         "Bắt đầu lúc " + item.getGioBatDau().format(DateTimeFormatter.ofPattern("HH:mm"))
-                ));                noiDung.add(Box.createVerticalStrut(8));
+                ));
+                noiDung.add(Box.createVerticalStrut(8));
             }
             if (sapToi.size() > 4) {
                 JLabel conNua = new JLabel("… và " + (sapToi.size() - 4) + " việc nữa, xem ở \"Xem cả ngày\"");
@@ -176,7 +179,7 @@ public class TrangChuPanel extends JPanel {
 
         if (dangTre.isEmpty() && vuaBatDau.isEmpty() && sapToi.isEmpty()) {
             JLabel trong = new JLabel("<html><body style='width:400px'>🎉 Không còn việc nào trong hôm nay cả — "
-                + "nghỉ ngơi thôi, hoặc bấm \"+ Thêm việc\" để lên kế hoạch tiếp!</body></html>");
+                    + "nghỉ ngơi thôi, hoặc bấm \"+ Thêm việc\" để lên kế hoạch tiếp!</body></html>");
             trong.setForeground(VintageTheme.CHU_MO);
             trong.setBorder(BorderFactory.createEmptyBorder(24, 4, 24, 4));
             noiDung.add(trong);
@@ -194,7 +197,9 @@ public class TrangChuPanel extends JPanel {
         hang.setOpaque(false);
         hang.setAlignmentX(Component.LEFT_ALIGNMENT);
         NutTron nut = new NutTron("📅 Xem cả ngày →", NutTron.Kieu.CHINH, VintageTheme.XANH_DUONG);
-        nut.addActionListener(e -> { if (khiBamXemCaNgay != null) khiBamXemCaNgay.run(); });
+        nut.addActionListener(e -> {
+            if (khiBamXemCaNgay != null) khiBamXemCaNgay.run();
+        });
         hang.add(nut);
         return hang;
     }
@@ -237,7 +242,9 @@ public class TrangChuPanel extends JPanel {
         JPanel nutBen = new JPanel(new GridLayout(2, 1, 0, 4));
         nutBen.setOpaque(false);
         NutTron dieuChinhLichNut = new NutTron("✨ Điều chỉnh lịch", NutTron.Kieu.CHINH, VintageTheme.XANH_DUONG);
-        dieuChinhLichNut.addActionListener(e -> { if (khiBamDieuChinhLich != null) khiBamDieuChinhLich.accept((int) c.getSoPhutTre()); });
+        dieuChinhLichNut.addActionListener(e -> {
+            if (khiBamDieuChinhLich != null) khiBamDieuChinhLich.accept((int) c.getSoPhutTre());
+        });
         NutTron xongNut = new NutTron("Đã xong");
         xongNut.addActionListener(e -> {
             item.danhDauHoanThanh();
@@ -261,7 +268,7 @@ public class TrangChuPanel extends JPanel {
         danhSach.setLayout(new BoxLayout(danhSach, BoxLayout.Y_AXIS));
         for (CanhBaoViec c : dangTre) {
             JLabel dong = new JLabel(BieuTuongViec.cua(c.getItem()) + " " + DinhDang.rutGon(c.getItem().getTen(), 24)
-                + " — trễ " + DinhDang.phut(c.getSoPhutTre()));
+                    + " — trễ " + DinhDang.phut(c.getSoPhutTre()));
             dong.setFont(VintageTheme.FONT_PHU_DE);
             dong.setForeground(VintageTheme.CHU_CHINH);
             dong.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -271,7 +278,9 @@ public class TrangChuPanel extends JPanel {
         the.add(danhSach, BorderLayout.CENTER);
 
         NutTron dieuChinhLichNut = new NutTron("🚨 ĐIỀU CHỈNH LỊCH", NutTron.Kieu.CHINH, VintageTheme.BAT_BUOC);
-        dieuChinhLichNut.addActionListener(e -> { if (khiBamDieuChinhLich != null) khiBamDieuChinhLich.accept(null); });
+        dieuChinhLichNut.addActionListener(e -> {
+            if (khiBamDieuChinhLich != null) khiBamDieuChinhLich.accept(null);
+        });
         JPanel hangNut = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
         hangNut.setOpaque(false);
         hangNut.add(dieuChinhLichNut);
@@ -336,7 +345,7 @@ public class TrangChuPanel extends JPanel {
         giua.setLayout(new BoxLayout(giua, BoxLayout.Y_AXIS));
         giua.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 0));
         JLabel dong1 = new JLabel(item.getGioBatDau().format(DateTimeFormatter.ofPattern("HH:mm")) + " – " + item.getGioKetThuc().format(DateTimeFormatter.ofPattern("HH:mm")) + "   "
-            + BieuTuongViec.cua(item) + " " + DinhDang.rutGon(item.getTen(), 26));
+                + BieuTuongViec.cua(item) + " " + DinhDang.rutGon(item.getTen(), 26));
         dong1.setFont(VintageTheme.FONT_NHAN);
         dong1.setToolTipText(item.getTen());
         JLabel dong2 = new JLabel(phuDe + " · " + item.loaiViec() + " · " + item.getDoUuTien());
@@ -361,11 +370,22 @@ public class TrangChuPanel extends JPanel {
         int gio = hienTai.getHour();
         String buoi;
         String icon;
-        if (gio >= 5 && gio < 11) { buoi = "Buổi sáng"; icon = "🌅"; }
-        else if (gio >= 11 && gio < 14) { buoi = "Buổi trưa"; icon = "🌞"; }
-        else if (gio >= 14 && gio < 18) { buoi = "Buổi chiều"; icon = "🌤️"; }
-        else if (gio >= 18 && gio < 22) { buoi = "Buổi tối"; icon = "🌆"; }
-        else { buoi = "Đêm khuya"; icon = "🌙"; }
+        if (gio >= 5 && gio < 11) {
+            buoi = "Buổi sáng";
+            icon = "🌅";
+        } else if (gio >= 11 && gio < 14) {
+            buoi = "Buổi trưa";
+            icon = "🌞";
+        } else if (gio >= 14 && gio < 18) {
+            buoi = "Buổi chiều";
+            icon = "🌤️";
+        } else if (gio >= 18 && gio < 22) {
+            buoi = "Buổi tối";
+            icon = "🌆";
+        } else {
+            buoi = "Đêm khuya";
+            icon = "🌙";
+        }
 
         bieuTuongBuoi.setText(icon);
         nhanChao.setText("Xin chào! " + buoi + " tốt lành ✨");
