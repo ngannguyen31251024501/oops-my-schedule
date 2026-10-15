@@ -111,8 +111,16 @@ public abstract class ScheduleItem {
 
     /** Đặt lại khung giờ tuyệt đối (dùng khi ReplanEngine cần "ép" 1 vị trí mới cụ thể). */
     protected void datLaiKhungGio(LocalTime moiBatDau, LocalTime moiKetThuc) {
+        if (moiBatDau == null || moiKetThuc == null) {
+            throw new IllegalArgumentException("Khung giờ mới không được null.");
+        }
         if (!moiBatDau.isBefore(moiKetThuc)) {
             throw new IllegalArgumentException("Khung giờ mới không hợp lệ: " + moiBatDau + " - " + moiKetThuc);
+        }
+        Duration moi = Duration.between(moiBatDau, moiKetThuc);
+        if (!moi.equals(layThoiLuong())) {
+            throw new IllegalArgumentException("Không được nén/kéo dài thời lượng: cũ "
+                    + layThoiLuong().toMinutes() + " phút, mới " + moi.toMinutes() + " phút.");
         }
         this.gioBatDau = moiBatDau;
         this.gioKetThuc = moiKetThuc;
