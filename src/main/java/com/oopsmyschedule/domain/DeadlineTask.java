@@ -24,15 +24,25 @@ public class DeadlineTask extends ScheduleItem {
     private boolean canhBaoTreHan = false;
 
     public DeadlineTask(String ten, LocalTime gioBatDau, LocalTime gioKetThuc,
-                         PriorityLevel doUuTien, LocalDateTime hanChot) {
+                        PriorityLevel doUuTien, LocalDateTime hanChot) {
         this(ten, gioBatDau, gioKetThuc, doUuTien, hanChot, LocalDate.now());
     }
 
     public DeadlineTask(String ten, LocalTime gioBatDau, LocalTime gioKetThuc,
-                         PriorityLevel doUuTien, LocalDateTime hanChot, LocalDate ngayThucHien) {
+                        PriorityLevel doUuTien, LocalDateTime hanChot, LocalDate ngayThucHien) {
         super(ten, gioBatDau, gioKetThuc, doUuTien);
+        // INV-21: ngày thực hiện bắt buộc có (xuLyKhiBiTre dùng để tính hạn chót).
+        if (ngayThucHien == null) {
+            throw new IllegalArgumentException("Ngày thực hiện không được null.");
+        }
         if (hanChot == null) {
             throw new IllegalArgumentException("Hạn chót không được null.");
+        }
+        // INV-06 (K-05): hạn chót không được trước giờ kết thúc của việc. Chỉ constructor
+        // công khai này kiểm; constructor 9 tham số (đọc file) cố ý KHÔNG kiểm để vẫn mở được file cũ.
+        if (hanChot.isBefore(LocalDateTime.of(ngayThucHien, gioKetThuc))) {
+            throw new IllegalArgumentException("Hạn chót (" + hanChot
+                    + ") không được trước giờ kết thúc (" + LocalDateTime.of(ngayThucHien, gioKetThuc) + ").");
         }
         this.hanChot = hanChot;
         this.ngayThucHien = ngayThucHien;
@@ -40,8 +50,8 @@ public class DeadlineTask extends ScheduleItem {
 
     /** Copy constructor giữ nguyên id + trạng thái (xem javadoc ở ScheduleItem). */
     public DeadlineTask(String id, String ten, LocalTime gioBatDau, LocalTime gioKetThuc,
-                         PriorityLevel doUuTien, boolean hoanThanh, LocalDateTime hanChot,
-                         LocalDate ngayThucHien, boolean canhBaoTreHan) {
+                        PriorityLevel doUuTien, boolean hoanThanh, LocalDateTime hanChot,
+                        LocalDate ngayThucHien, boolean canhBaoTreHan) {
         super(id, ten, gioBatDau, gioKetThuc, doUuTien, hoanThanh);
         if (hanChot == null) {
             throw new IllegalArgumentException("Hạn chót không được null.");
@@ -107,8 +117,8 @@ public class DeadlineTask extends ScheduleItem {
     @Override
     public String moTaTrangThai() {
         return canhBaoTreHan
-            ? "⚠ CẢNH BÁO: dời sẽ trễ hạn (" + hanChot + ") — giữ nguyên, chờ bạn quyết định"
-            : "Còn kịp hạn (" + hanChot + ")";
+                ? "⚠ CẢNH BÁO: dời sẽ trễ hạn (" + hanChot + ") — giữ nguyên, chờ bạn quyết định"
+                : "Còn kịp hạn (" + hanChot + ")";
     }
 
     @Override
