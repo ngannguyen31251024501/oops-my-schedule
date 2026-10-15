@@ -51,10 +51,17 @@ public class DaySchedule {
      * FixedEvent đã có trong lịch → ném {@link IllegalArgumentException},
      * không lưu item mới (đúng TC-01 trong tài liệu thiết kế).
      */
-    public void themItem(ScheduleItem item) {
-        if (item == null) {
-            throw new IllegalArgumentException("Không thể thêm item null vào lịch.");
-        }
+
+        public void themItem(ScheduleItem item) {
+            if (item == null) {
+                throw new IllegalArgumentException("Không thể thêm item null vào lịch.");
+            }
+            // K-06: không cho 2 item cùng id tồn tại trong 1 lịch
+            for (ScheduleItem cu : danhSachItem) {
+                if (cu.getId().equals(item.getId())) {
+                    throw new IllegalArgumentException("Trùng id: " + item.getId());
+                }
+            }
         if (item instanceof FixedEvent) {
             for (ScheduleItem cu : danhSachItem) {
                 if (cu instanceof FixedEvent && cu.trung(item)) {
