@@ -46,14 +46,14 @@ public abstract class ScheduleItem {
      * sách đang xử lý.
      */
     protected ScheduleItem(String id, String ten, LocalTime gioBatDau, LocalTime gioKetThuc,
-                            PriorityLevel doUuTien, boolean hoanThanh) {
+                           PriorityLevel doUuTien, boolean hoanThanh) {
         // Guard clause: không cho tạo item có giờ bắt đầu >= giờ kết thúc.
         if (gioBatDau == null || gioKetThuc == null) {
             throw new IllegalArgumentException("Giờ bắt đầu / giờ kết thúc không được null.");
         }
         if (!gioBatDau.isBefore(gioKetThuc)) {
             throw new IllegalArgumentException(
-                "Giờ bắt đầu (" + gioBatDau + ") phải trước giờ kết thúc (" + gioKetThuc + ").");
+                    "Giờ bắt đầu (" + gioBatDau + ") phải trước giờ kết thúc (" + gioKetThuc + ").");
         }
         if (ten == null || ten.isBlank()) {
             throw new IllegalArgumentException("Tên việc không được để trống.");
@@ -88,8 +88,25 @@ public abstract class ScheduleItem {
      * khoảng thời lượng (duration). Dùng chung cho các lớp con "linh hoạt".
      */
     protected void doiLich(int soPhut) {
+        // INV-03: guard TRƯỚC khi đổi bất kỳ field nào, để object không bị đổi nửa chừng.
+        if (vuotNuaDemNeuDoi(soPhut)) {
+            throw new IllegalArgumentException(
+                    "Dời " + soPhut + " phút sẽ làm giờ kết thúc (" + gioKetThuc + ") vượt 23:59.");
+        }
         this.gioBatDau = this.gioBatDau.plusMinutes(soPhut);
         this.gioKetThuc = this.gioKetThuc.plusMinutes(soPhut);
+    }
+
+    /** Mốc cuối ngày hợp lệ (23:59) tính bằng giây: 86340. */
+    private static final long CUOI_NGAY_GIAY = LocalTime.of(23, 59).toSecondOfDay();
+
+    /**
+     * Dời {@code soPhut} phút có làm giờ kết thúc vượt 23:59 không? Tính bằng giây
+     * tuyệt đối vì {@code LocalTime.plusMinutes} cuộn vòng qua nửa đêm. Kết thúc
+     * đúng 23:59 vẫn hợp lệ. Chỉ đọc, không đổi trạng thái.
+     */
+    public boolean vuotNuaDemNeuDoi(int soPhut) {
+        return gioKetThuc.toSecondOfDay() + soPhut * 60L > CUOI_NGAY_GIAY;
     }
 
     /** Đặt lại khung giờ tuyệt đối (dùng khi ReplanEngine cần "ép" 1 vị trí mới cụ thể). */
