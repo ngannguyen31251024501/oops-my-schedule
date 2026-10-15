@@ -7,22 +7,14 @@ import java.util.UUID;
 
 /**
  * Lớp cha trừu tượng cho mọi loại việc trong lịch trình 1 ngày.
- * <p>
- * Đây là chỗ thể hiện rõ nhất 3 trụ cột OOP của đồ án:
- * <ul>
- *   <li><b>Trừu tượng (Abstraction)</b>: {@link #coTheDoiLich()} và
- *       {@link #xuLyKhiBiTre(int)} không có thân hàm ở đây, buộc mọi lớp con
- *       phải tự định nghĩa "phản ứng" riêng của mình.</li>
- *   <li><b>Đa hình (Polymorphism)</b>: {@code ReplanEngine} chỉ cần gọi
- *       {@code item.xuLyKhiBiTre(soPhut)} mà không cần biết item là loại gì —
- *       hành vi thực thi khác nhau tùy vào lớp con thực tế (FixedEvent,
- *       FlexibleTask, DeadlineTask, RecurringEvent).</li>
- *   <li><b>Đóng gói (Encapsulation) / Tell-Don't-Ask</b>: gioBatDau, gioKetThuc
- *       là private, chỉ có thể thay đổi qua {@link #doiLich(int)} — lớp gọi
- *       (ReplanEngine, Disruption) không hề "táy máy" chỉnh trực tiếp field.</li>
- * </ul>
+ * Trừu tượng: coTheDoiLich(), xuLyKhiBiTre(int) để lớp con tự định nghĩa.
+ * Đa hình: ReplanEngine gọi item.xuLyKhiBiTre(soPhut) mà không cần biết loại item.
+ * Đóng gói: gioBatDau, gioKetThuc private, chỉ đổi qua doiLich(int) / datLaiKhungGio(...).
  */
 public abstract class ScheduleItem {
+
+    /** Mốc cuối ngày hợp lệ (23:59) tính bằng giây: 86340. */
+    private static final long CUOI_NGAY_GIAY = LocalTime.of(23, 59).toSecondOfDay();
 
     private final String id;
     private String ten;
@@ -36,21 +28,17 @@ public abstract class ScheduleItem {
     }
 
     /**
-     * Constructor dùng khi SAO CHÉP 1 item đã có (xem
-     * {@link com.oopsmyschedule.service.DaySchedule#saoChep()}). Giữ nguyên
-     * {@code id} và trạng thái hoàn thành gốc — bắt buộc phải giữ nguyên id
-     * vì {@link SkipDisruption} và {@code ReplanEngine} cần đối chiếu "cùng 1
-     * việc" giữa bản gốc (người dùng chọn trên UI) và bản sao độc lập mà
-     * engine đang thao tác — nếu mỗi lần sao chép lại sinh id ngẫu nhiên mới,
-     * việc bị chọn để "bỏ" sẽ không bao giờ khớp được với item nào trong danh
-     * sách đang xử lý.
+     * Constructor dùng khi SAO CHÉP 1 item đã có (xem DaySchedule#saoChep()).
+     * Giữ nguyên id và trạng thái hoàn thành gốc để SkipDisruption đối chiếu được.
      */
     protected ScheduleItem(String id, String ten, LocalTime gioBatDau, LocalTime gioKetThuc,
                            PriorityLevel doUuTien, boolean hoanThanh) {
-        // Guard clause: không cho tạo item có giờ bắt đầu >= giờ kết thúc.
         if (gioBatDau == null || gioKetThuc == null) {
             throw new IllegalArgumentException("Giờ bắt đầu / giờ kết thúc không được null.");
         }
+        // INV-15: thời gian không có giây
+        kiemTraKhongCoGiay(gioBatDau);
+        kiemTraKhongCoGiay(gioKetThuc);
         if (!gioBatDau.isBefore(gioKetThuc)) {
             throw new IllegalArgumentException(
                     "Giờ bắt đầu (" + gioBatDau + ") phải trước giờ kết thúc (" + gioKetThuc + ").");
@@ -71,24 +59,42 @@ public abstract class ScheduleItem {
     /** Việc này có được phép dời giờ không? Mỗi loại quyết định khác nhau. */
     public abstract boolean coTheDoiLich();
 
-    /**
-     * Phản ứng khi bị trễ {@code soPhutTre} phút. Đây chính là chỗ đa hình
-     * "kép" của đề tài: tùy loại ScheduleItem mà hành vi hoàn toàn khác nhau
-     * (dời giờ, ném lỗi, kiểm tra hạn chót, hay bỏ qua hôm nay).
-     */
+    /** Phản ứng khi bị trễ {@code soPhutTre} phút (dời giờ, ném lỗi, kiểm tra hạn chót, hay bỏ qua). */
     public abstract void xuLyKhiBiTre(int soPhutTre);
 
-    /** Mô tả ngắn gọn lý do/kết quả xử lý gần nhất, dùng để hiển thị ở bảng so sánh. */
+    /** Mô tả ngắn gọn lý do/kết quả xử lý gần nhất, dùng ở bảng so sánh. */
     public abstract String moTaTrangThai();
 
-    // ---------- Helper được bảo vệ (protected) cho lớp con tái sử dụng ----------
+    // ---------- Helper ----------
+
+    /** INV-15: ném IllegalArgumentException nếu giờ có giây hoặc nano giây. */
+    private static void kiemTraKhongCoGiay(LocalTime gio) {
+        if (gio.getSecond() != 0 || gio.getNano() != 0) {
+            throw new IllegalArgumentException("Giờ " + gio + " không được có giây.");
+        }
+    }
 
     /**
-     * Dời cả gioBatDau và gioKetThuc đi {@code soPhut} phút, giữ nguyên
-     * khoảng thời lượng (duration). Dùng chung cho các lớp con "linh hoạt".
+     * Dời {@code soPhut} phút có làm khung giờ vượt ra ngoài 00:00–23:59 không?
+     * Tính bằng giây tuyệt đối vì LocalTime.plusMinutes cuộn vòng qua nửa đêm.
+     * Kết thúc đúng 23:59 vẫn hợp lệ. Chỉ đọc, không đổi trạng thái.
+     */
+    public boolean vuotNuaDemNeuDoi(int soPhut) {
+        long batDauMoi = gioBatDau.toSecondOfDay() + soPhut * 60L;
+        long ketThucMoi = gioKetThuc.toSecondOfDay() + soPhut * 60L;
+        return batDauMoi < 0 || ketThucMoi > CUOI_NGAY_GIAY;
+    }
+
+    /**
+     * Dời cả gioBatDau và gioKetThuc đi {@code soPhut} phút, giữ nguyên thời lượng.
+     * @throws IllegalStateException    nếu việc đã hoàn thành (INV-18)
+     * @throws IllegalArgumentException nếu dời xong bị vượt 23:59 (INV-03)
      */
     protected void doiLich(int soPhut) {
-        // INV-03: guard TRƯỚC khi đổi bất kỳ field nào, để object không bị đổi nửa chừng.
+        if (hoanThanh) {
+            throw new IllegalStateException("Việc \"" + ten + "\" đã hoàn thành, không thể dời lịch.");
+        }
+        // INV-03: guard TRƯỚC khi đổi bất kỳ field nào, để object không bị đổi nửa chừng
         if (vuotNuaDemNeuDoi(soPhut)) {
             throw new IllegalArgumentException(
                     "Dời " + soPhut + " phút sẽ làm giờ kết thúc (" + gioKetThuc + ") vượt 23:59.");
@@ -97,41 +103,30 @@ public abstract class ScheduleItem {
         this.gioKetThuc = this.gioKetThuc.plusMinutes(soPhut);
     }
 
-    /** Mốc cuối ngày hợp lệ (23:59) tính bằng giây: 86340. */
-    private static final long CUOI_NGAY_GIAY = LocalTime.of(23, 59).toSecondOfDay();
-
     /**
-     * Dời {@code soPhut} phút có làm giờ kết thúc vượt 23:59 không? Tính bằng giây
-     * tuyệt đối vì {@code LocalTime.plusMinutes} cuộn vòng qua nửa đêm. Kết thúc
-     * đúng 23:59 vẫn hợp lệ. Chỉ đọc, không đổi trạng thái.
+     * Đặt lại khung giờ tuyệt đối (ReplanEngine dùng khi cần "ép" 1 vị trí mới).
+     * @throws IllegalStateException    nếu việc đã hoàn thành (INV-18)
+     * @throws IllegalArgumentException nếu giờ null, có giây, hoặc bắt đầu không trước kết thúc
      */
-    public boolean vuotNuaDemNeuDoi(int soPhut) {
-        return gioKetThuc.toSecondOfDay() + soPhut * 60L > CUOI_NGAY_GIAY;
-    }
-
-    /** Đặt lại khung giờ tuyệt đối (dùng khi ReplanEngine cần "ép" 1 vị trí mới cụ thể). */
     protected void datLaiKhungGio(LocalTime moiBatDau, LocalTime moiKetThuc) {
+        if (hoanThanh) {
+            throw new IllegalStateException("Việc \"" + ten + "\" đã hoàn thành, không thể đổi giờ.");
+        }
         if (moiBatDau == null || moiKetThuc == null) {
             throw new IllegalArgumentException("Khung giờ mới không được null.");
         }
+        kiemTraKhongCoGiay(moiBatDau);
+        kiemTraKhongCoGiay(moiKetThuc);
         if (!moiBatDau.isBefore(moiKetThuc)) {
             throw new IllegalArgumentException("Khung giờ mới không hợp lệ: " + moiBatDau + " - " + moiKetThuc);
-        }
-        Duration moi = Duration.between(moiBatDau, moiKetThuc);
-        if (!moi.equals(layThoiLuong())) {
-            throw new IllegalArgumentException("Không được nén/kéo dài thời lượng: cũ "
-                    + layThoiLuong().toMinutes() + " phút, mới " + moi.toMinutes() + " phút.");
         }
         this.gioBatDau = moiBatDau;
         this.gioKetThuc = moiKetThuc;
     }
 
     /**
-     * Cho phép {@code ReplanEngine} (tầng điều phối) gán một khung giờ mới cụ
-     * thể sau khi đã phân tích ưu tiên/xung đột toàn cục — khác với
-     * {@link #xuLyKhiBiTre(int)} vốn là phản ứng "tự quyết" của riêng item.
-     * Vẫn giữ nguyên guard clause (giờ bắt đầu phải trước giờ kết thúc) nên
-     * không phá vỡ tính hợp lệ của dữ liệu dù được gọi từ ngoài.
+     * Cho phép ReplanEngine gán khung giờ mới sau khi đã phân tích ưu tiên/xung đột toàn cục.
+     * Vẫn đi qua guard clause của datLaiKhungGio (lớp con có thể override để chặn thêm).
      */
     public final void ganLaiKhungGioBoiEngine(LocalTime moiBatDau, LocalTime moiKetThuc) {
         datLaiKhungGio(moiBatDau, moiKetThuc);
@@ -185,7 +180,7 @@ public abstract class ScheduleItem {
         return hoanThanh;
     }
 
-    /** Đánh dấu việc đã hoàn thành — BoTheoDoiLich sẽ bỏ qua, không nhắc trễ nữa. */
+    /** Đánh dấu việc đã hoàn thành. */
     public void danhDauHoanThanh() {
         this.hoanThanh = true;
     }
@@ -199,16 +194,7 @@ public abstract class ScheduleItem {
         return String.format("[%s] %s (%s - %s) - %s", loaiViec(), ten, gioBatDau, gioKetThuc, doUuTien);
     }
 
-    /**
-     * Đồng nhất theo {@code id}, KHÔNG theo nội dung (giờ giấc/tên có thể bị
-     * ReplanEngine chỉnh sửa liên tục). Bắt buộc phải có để
-     * {@link java.util.List#remove(Object)} trong {@link SkipDisruption} và
-     * mọi thao tác đối chiếu "cùng 1 việc" giữa bản gốc và bản sao (xem
-     * {@link com.oopsmyschedule.service.DaySchedule#saoChep()}) hoạt động
-     * đúng — nếu không override, Object.equals() mặc định so theo địa chỉ
-     * tham chiếu, khiến 1 item và bản sao "giống hệt" của nó bị coi là 2
-     * item khác nhau.
-     */
+    /** Đồng nhất theo id, KHÔNG theo nội dung (giờ/tên bị engine chỉnh liên tục). */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
