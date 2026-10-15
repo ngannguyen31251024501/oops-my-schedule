@@ -48,7 +48,10 @@ public class ReduceWorkloadStrategy extends AbstractReplanStrategy {
     protected List<ScheduleItem> tienXuLyTruocKhiQuet(List<ScheduleItem> conLai, LocalTime thoiDiemHienTai,
                                                         KetQuaSoSanh ketQua) {
         long phutCoSan = tinhPhutCoSanThucTe(conLai, thoiDiemHienTai);
-        long phutCanThiet = conLai.stream().mapToLong(it -> it.layThoiLuong().toMinutes()).sum();
+        long phutCanThiet = conLai.stream()
+                .filter(it -> !(it instanceof FixedEvent) && !it.isHoanThanh())
+                .mapToLong(it -> it.layThoiLuong().toMinutes())
+                .sum();
         if (phutCanThiet <= phutCoSan) {
             return conLai; // lịch chưa quá tải, không cần chủ động cắt bớt
         }
