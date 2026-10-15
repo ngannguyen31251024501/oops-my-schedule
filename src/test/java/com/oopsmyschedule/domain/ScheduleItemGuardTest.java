@@ -11,7 +11,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 /** [NG-02a] Domain: chuyển từ KiemThu.java (TC-01..08 phần domain + BONUS-3). */
-class ScheduleItemTest {
+class ScheduleItemGuardTest {
 
     private static LocalTime t(int h, int m) {
         return LocalTime.of(h, m);
