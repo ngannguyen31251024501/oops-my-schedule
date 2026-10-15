@@ -134,6 +134,9 @@ public abstract class ScheduleItem {
         if (!moiBatDau.isBefore(moiKetThuc)) {
             throw new IllegalArgumentException("Khung giờ mới không hợp lệ: " + moiBatDau + " - " + moiKetThuc);
         }
+        if (!Duration.between(moiBatDau, moiKetThuc).equals(layThoiLuong())) { // INV-08
+            throw new IllegalArgumentException("Không được thay đổi thời lượng của việc.");
+        }
         this.gioBatDau = moiBatDau;
         this.gioKetThuc = moiKetThuc;
     }
