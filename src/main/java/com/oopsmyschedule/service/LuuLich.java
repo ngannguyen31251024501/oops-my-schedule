@@ -56,32 +56,11 @@ public final class LuuLich {
         sb.append("  \"ngay\": \"").append(ds.getNgay()).append("\",\n");
         sb.append("  \"soDaHuy\": ").append(ds.getSoDaHuy()).append(",\n");
         sb.append("  \"cacViec\": [\n");
-        List<ScheduleItem> ds2 = ds.layLichHienTai();
-        for (int i = 0; i < ds2.size(); i++) {
-            ScheduleItem it = ds2.get(i);
-            sb.append("    {");
-            sb.append("\"id\": \"").append(it.getId()).append("\", ");
-            sb.append("\"loai\": \"").append(it.loaiViec()).append("\", ");
-            sb.append("\"ten\": \"").append(escape(it.getTen())).append("\", ");
-            sb.append("\"gioBatDau\": \"").append(it.getGioBatDau()).append("\", ");
-            sb.append("\"gioKetThuc\": \"").append(it.getGioKetThuc()).append("\", ");
-            sb.append("\"doUuTien\": \"").append(it.getDoUuTien().name()).append("\", ");
-            sb.append("\"hoanThanh\": ").append(it.isHoanThanh());
-            if (it instanceof DeadlineTask dt) {
-                sb.append(", \"hanChot\": \"").append(dt.getHanChot()).append("\"");
-                sb.append(", \"ngayThucHien\": \"").append(dt.getNgayThucHien()).append("\"");
-                sb.append(", \"canhBaoTreHan\": ").append(dt.isCanhBaoTreHan());
-            }
-            if (it instanceof RecurringEvent re) {
-                sb.append(", \"streak\": ").append(re.getSoNgayLienTiep());
-                sb.append(", \"boQuaHomNay\": ").append(re.isBoQuaHomNay());
-            }
-            if (it instanceof FlexibleTask ft) {
-                sb.append(", \"soLanDaDoi\": ").append(ft.getSoLanDaDoi());
-            }
-            sb.append("}");
-            sb.append(i < ds2.size() - 1 ? ",\n" : "\n");
-        }
+        ghiDanhSachItem(sb, ds.layLichHienTai());
+        sb.append("  ],\n");
+
+        sb.append("  \"chuaXepLich\": [\n");
+        ghiDanhSachItem(sb, ds.getChuaXepLich());
         sb.append("  ],\n");
         sb.append("  \"nhatKySuCo\": [\n");
         List<SuCoNhatKy> nk = ds.getNhatKySuCo();
@@ -117,8 +96,45 @@ public final class LuuLich {
         }
     }
 
+
     private static String noiChuoi(List<String> danhSach) {
         return danhSach == null ? "" : String.join(NGAN_CACH, danhSach);
+    }
+
+    private static void ghiDanhSachItem(
+            StringBuilder sb,
+            List<ScheduleItem> danhSach) {
+
+        for (int i = 0; i < danhSach.size(); i++) {
+            ScheduleItem it = danhSach.get(i);
+
+            sb.append("    {");
+            sb.append("\"id\": \"").append(escape(it.getId())).append("\", ");
+            sb.append("\"loai\": \"").append(escape(it.loaiViec())).append("\", ");
+            sb.append("\"ten\": \"").append(escape(it.getTen())).append("\", ");
+            sb.append("\"gioBatDau\": \"").append(it.getGioBatDau()).append("\", ");
+            sb.append("\"gioKetThuc\": \"").append(it.getGioKetThuc()).append("\", ");
+            sb.append("\"doUuTien\": \"").append(it.getDoUuTien().name()).append("\", ");
+            sb.append("\"hoanThanh\": ").append(it.isHoanThanh());
+
+            if (it instanceof DeadlineTask dt) {
+                sb.append(", \"hanChot\": \"").append(dt.getHanChot()).append("\"");
+                sb.append(", \"ngayThucHien\": \"").append(dt.getNgayThucHien()).append("\"");
+                sb.append(", \"canhBaoTreHan\": ").append(dt.isCanhBaoTreHan());
+            }
+
+            if (it instanceof RecurringEvent re) {
+                sb.append(", \"streak\": ").append(re.getSoNgayLienTiep());
+                sb.append(", \"boQuaHomNay\": ").append(re.isBoQuaHomNay());
+            }
+
+            if (it instanceof FlexibleTask ft) {
+                sb.append(", \"soLanDaDoi\": ").append(ft.getSoLanDaDoi());
+            }
+
+            sb.append("}");
+            sb.append(i < danhSach.size() - 1 ? ",\n" : "\n");
+        }
     }
 
     private static List<String> tachChuoi(String s) {
@@ -155,7 +171,13 @@ public final class LuuLich {
         "\\{[^{}]*?\"gio\"\\s*:\\s*\"([^\"]*)\"[^{}]*?\"moTaSuCo\"\\s*:\\s*\"" + CHUOI_CO_ESCAPE + "\"[^{}]*?" +
         "\"tenPhuongAn\"\\s*:\\s*\"" + CHUOI_CO_ESCAPE + "\"[^{}]*?\"danhSachThayDoi\"\\s*:\\s*\"" + CHUOI_CO_ESCAPE + "\"[^{}]*?" +
         "\"tenKhongTheSapXep\"\\s*:\\s*\"" + CHUOI_CO_ESCAPE + "\"[^{}]*?\\}");
+    private static final Pattern MAU_CAC_VIEC = Pattern.compile(
+            "\"cacViec\"\\s*:\\s*\\[(.*?)\\]",
+            Pattern.DOTALL);
 
+    private static final Pattern MAU_CHUA_XEP_LICH = Pattern.compile(
+            "\"chuaXepLich\"\\s*:\\s*\\[(.*?)\\]",
+            Pattern.DOTALL);
     /**
      * FIX BUG (audit bản 10, mục 3 — phần còn sót): vì {@link #doc} KHÔNG
      * phải parser JSON thật, nó có thể "im lặng" bỏ qua nội dung không
@@ -190,47 +212,20 @@ public final class LuuLich {
         }
 
         DaySchedule ds = new DaySchedule(ngay);
-        Matcher m = MAU_ITEM.matcher(noiDung);
-        List<ScheduleItem> tam = new ArrayList<>();
-        while (m.find()) {
-            String id = m.group(1);
-            String loai = m.group(2);
-            String ten = unescape(m.group(3));
-            LocalTime bd = LocalTime.parse(m.group(4));
-            LocalTime kt = LocalTime.parse(m.group(5));
-            PriorityLevel uuTien = PriorityLevel.valueOf(m.group(6));
-            boolean hoanThanh = Boolean.parseBoolean(m.group(7));
-            String phanConLai = m.group(8);
-
-            ScheduleItem item = switch (loai) {
-                case "Cố định" -> new FixedEvent(id, ten, bd, kt, uuTien, hoanThanh);
-                case "Deadline" -> {
-                    Matcher mh = MAU_HAN_CHOT.matcher(phanConLai);
-                    LocalDateTime hanChot = mh.find() ? LocalDateTime.parse(mh.group(1))
-                        : LocalDateTime.of(ngay, LocalTime.of(23, 59));
-                    Matcher mn = MAU_NGAY_THUC_HIEN.matcher(phanConLai);
-                    LocalDate ngayThucHien = mn.find() ? LocalDate.parse(mn.group(1)) : ngay;
-                    Matcher mc = MAU_CANH_BAO.matcher(phanConLai);
-                    boolean canhBao = mc.find() && Boolean.parseBoolean(mc.group(1));
-                    yield new DeadlineTask(id, ten, bd, kt, uuTien, hoanThanh, hanChot, ngayThucHien, canhBao);
-                }
-                case "Lặp lại" -> {
-                    Matcher ms = MAU_STREAK.matcher(phanConLai);
-                    int streak = ms.find() ? Integer.parseInt(ms.group(1)) : 0;
-                    Matcher mb = MAU_BO_QUA.matcher(phanConLai);
-                    boolean boQua = mb.find() && Boolean.parseBoolean(mb.group(1));
-                    yield new RecurringEvent(id, ten, bd, kt, uuTien, hoanThanh, streak, boQua);
-                }
-                default -> {
-                    Matcher msl = MAU_SO_LAN_DOI.matcher(phanConLai);
-                    int soLanDaDoi = msl.find() ? Integer.parseInt(msl.group(1)) : 0;
-                    yield new FlexibleTask(id, ten, bd, kt, uuTien, hoanThanh, soLanDaDoi);
-                }
-            };
-            tam.add(item);
+        Matcher mCacViec = MAU_CAC_VIEC.matcher(noiDung);
+        if (mCacViec.find()) {
+            List<ScheduleItem> cacViec = docDanhSachItem(mCacViec.group(1), ngay);
+            for (ScheduleItem item : cacViec) {
+                ds.themItem(item);
+            }
         }
-        for (ScheduleItem item : tam) {
-            ds.themItem(item);
+
+        Matcher mChuaXep = MAU_CHUA_XEP_LICH.matcher(noiDung);
+        if (mChuaXep.find()) {
+            List<ScheduleItem> chuaXep = docDanhSachItem(mChuaXep.group(1), ngay);
+            for (ScheduleItem item : chuaXep) {
+                ds.themChuaXepLich(item);
+            }
         }
 
         int soDaHuy = 0;
@@ -257,7 +252,79 @@ public final class LuuLich {
         return s.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 
+
     private static String unescape(String s) {
         return s.replace("\\\"", "\"").replace("\\\\", "\\");
+    }
+
+    private static List<ScheduleItem> docDanhSachItem(
+            String noiDung,
+            LocalDate ngay) {
+
+        List<ScheduleItem> danhSach = new ArrayList<>();
+        Matcher m = MAU_ITEM.matcher(noiDung);
+
+        while (m.find()) {
+            String id = unescape(m.group(1));
+            String loai = m.group(2);
+            String ten = unescape(m.group(3));
+            LocalTime bd = LocalTime.parse(m.group(4));
+            LocalTime kt = LocalTime.parse(m.group(5));
+            PriorityLevel uuTien = PriorityLevel.valueOf(m.group(6));
+            boolean hoanThanh = Boolean.parseBoolean(m.group(7));
+            String phanConLai = m.group(8);
+
+            ScheduleItem item = switch (loai) {
+                case "Cố định" ->
+                        new FixedEvent(id, ten, bd, kt, uuTien, hoanThanh);
+
+                case "Deadline" -> {
+                    Matcher mh = MAU_HAN_CHOT.matcher(phanConLai);
+                    LocalDateTime hanChot = mh.find()
+                            ? LocalDateTime.parse(mh.group(1))
+                            : LocalDateTime.of(ngay, LocalTime.of(23, 59));
+
+                    Matcher mn = MAU_NGAY_THUC_HIEN.matcher(phanConLai);
+                    LocalDate ngayThucHien = mn.find()
+                            ? LocalDate.parse(mn.group(1)) : ngay;
+
+                    Matcher mc = MAU_CANH_BAO.matcher(phanConLai);
+                    boolean canhBao = mc.find()
+                            && Boolean.parseBoolean(mc.group(1));
+
+                    yield new DeadlineTask(
+                            id, ten, bd, kt, uuTien, hoanThanh,
+                            hanChot, ngayThucHien, canhBao);
+                }
+
+                case "Lặp lại" -> {
+                    Matcher ms = MAU_STREAK.matcher(phanConLai);
+                    int streak = ms.find()
+                            ? Integer.parseInt(ms.group(1)) : 0;
+
+                    Matcher mb = MAU_BO_QUA.matcher(phanConLai);
+                    boolean boQua = mb.find()
+                            && Boolean.parseBoolean(mb.group(1));
+
+                    yield new RecurringEvent(
+                            id, ten, bd, kt, uuTien, hoanThanh,
+                            streak, boQua);
+                }
+
+                default -> {
+                    Matcher msl = MAU_SO_LAN_DOI.matcher(phanConLai);
+                    int soLanDaDoi = msl.find()
+                            ? Integer.parseInt(msl.group(1)) : 0;
+
+                    yield new FlexibleTask(
+                            id, ten, bd, kt, uuTien, hoanThanh,
+                            soLanDaDoi);
+                }
+            };
+
+            danhSach.add(item);
+        }
+
+        return danhSach;
     }
 }
