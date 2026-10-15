@@ -22,7 +22,8 @@ public class DaySchedule {
 
     private final LocalDate ngay;
     private final List<ScheduleItem> danhSachItem = new ArrayList<>();
-
+    // Các công việc chưa được xếp vào lịch trong ngày.
+    private final List<ScheduleItem> danhSachChuaXepLich = new ArrayList<>();
     /**
      * Đếm số việc người dùng chủ động XÓA/HỦY trong ngày (khác với việc bị
      * ReplanEngine "đề xuất bỏ" rồi chuyển sang ngày mai) — dùng cho
@@ -237,6 +238,14 @@ public class DaySchedule {
         for (ScheduleItem item : this.danhSachItem) {
             ban.danhSachItem.add(saoChepItem(item));
         }
+
+        for (ScheduleItem item : this.danhSachChuaXepLich) {
+            ban.danhSachChuaXepLich.add(saoChepItem(item));
+        }
+
+        ban.soDaHuy = this.soDaHuy;
+        ban.nhatKySuCo.addAll(this.nhatKySuCo);
+
         return ban;
     }
 
@@ -265,5 +274,34 @@ public class DaySchedule {
                 item.getDoUuTien(), item.isHoanThanh(), ft.getSoLanDaDoi());
         }
         throw new IllegalStateException("Loại ScheduleItem chưa được hỗ trợ sao chép: " + item.getClass());
+    }
+    /**
+     * Trả về danh sách công việc chưa được xếp lịch.
+     */
+    public List<ScheduleItem> getChuaXepLich() {
+        return Collections.unmodifiableList(
+                new ArrayList<>(danhSachChuaXepLich)
+        );
+    }
+
+    /**
+     * Thêm một công việc vào danh sách chưa xếp lịch.
+     */
+    public void themChuaXepLich(ScheduleItem item) {
+        if (item == null) {
+            throw new IllegalArgumentException(
+                    "Không thể thêm item null vào danh sách chưa xếp lịch."
+            );
+        }
+
+        for (ScheduleItem cu : danhSachChuaXepLich) {
+            if (cu.getId().equals(item.getId())) {
+                throw new IllegalArgumentException(
+                        "Trùng id trong danh sách chưa xếp lịch: " + item.getId()
+                );
+            }
+        }
+
+        danhSachChuaXepLich.add(item);
     }
 }
