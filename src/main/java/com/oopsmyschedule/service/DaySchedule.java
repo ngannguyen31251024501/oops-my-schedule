@@ -143,31 +143,48 @@ public class DaySchedule {
      * 23:59) đủ dài cho {@code thoiLuong}, quét qua các item đã có theo thứ
      * tự thời gian. Trả về {@code null} nếu không có khoảng nào đủ.
      */
+
     public LocalTime timKhoangTrongDauTien(Duration thoiLuong) {
-        LocalTime cuoiNgay = LocalTime.of(23, 59);
+        // Biên cuối ngày là 23:59, không phải 24:00.
+        final int CUOI_NGAY = 23 * 3600 + 59 * 60; // 86340 giây
+        LocalTime cuoiNgay = LocalTime.ofSecondOfDay(CUOI_NGAY);
+
         List<ScheduleItem> daSapXep = new ArrayList<>(danhSachItem);
-        daSapXep.sort((a, b) -> a.getGioBatDau().compareTo(b.getGioBatDau()));
+        daSapXep.sort(
+                (a, b) -> a.getGioBatDau().compareTo(b.getGioBatDau())
+        );
 
         LocalTime conTro = LocalTime.MIDNIGHT;
+
         for (ScheduleItem item : daSapXep) {
             if (item.getGioBatDau().isAfter(conTro)) {
-                long phutTrong = Duration.between(conTro, item.getGioBatDau()).toMinutes();
+                long phutTrong = Duration.between(
+                        conTro, item.getGioBatDau()
+                ).toMinutes();
+
                 if (phutTrong >= thoiLuong.toMinutes()) {
                     return conTro;
                 }
             }
+
             if (item.getGioKetThuc().isAfter(conTro)) {
                 conTro = item.getGioKetThuc();
             }
         }
+
         if (!conTro.isAfter(cuoiNgay)) {
-            long phutConLai = Duration.between(conTro, cuoiNgay).toMinutes();
+            long phutConLai = Duration.between(
+                    conTro, cuoiNgay
+            ).toMinutes();
+
             if (phutConLai >= thoiLuong.toMinutes()) {
                 return conTro;
             }
         }
+
         return null;
     }
+
 
     /**
      * Dùng bởi {@link LuuLich#doc} để khôi phục lại 2 bộ đếm/nhật ký không
