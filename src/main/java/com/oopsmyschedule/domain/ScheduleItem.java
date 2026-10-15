@@ -88,8 +88,18 @@ public abstract class ScheduleItem {
      * khoảng thời lượng (duration). Dùng chung cho các lớp con "linh hoạt".
      */
     protected void doiLich(int soPhut) {
+        if (!doiDuocTrongNgay(soPhut)) {
+            throw new IllegalArgumentException("Dời " + soPhut + " phút sẽ vượt qua nửa đêm — không cuộn vòng sang 00:00.");
+        }
         this.gioBatDau = this.gioBatDau.plusMinutes(soPhut);
         this.gioKetThuc = this.gioKetThuc.plusMinutes(soPhut);
+    }
+
+    /** Dời {@code soPhut} phút có còn nằm trong ngày (không cuộn vòng qua 00:00) không? */
+    public boolean doiDuocTrongNgay(int soPhut) {
+        long batDau = gioBatDau.toSecondOfDay() + soPhut * 60L;
+        long ketThuc = gioKetThuc.toSecondOfDay() + soPhut * 60L;
+        return batDau >= 0 && ketThuc <= 24 * 3600L - 60;
     }
 
     /** Đặt lại khung giờ tuyệt đối (dùng khi ReplanEngine cần "ép" 1 vị trí mới cụ thể). */

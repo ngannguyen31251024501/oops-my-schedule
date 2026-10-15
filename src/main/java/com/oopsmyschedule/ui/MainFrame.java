@@ -406,7 +406,7 @@ public class MainFrame extends JFrame {
     private void lamMoiTatCa() {
         LocalTime hienTai = dongHo.layGioHienTai();
 
-        List<CanhBaoViec> canhBaoList = BoTheoDoiLich.quet(ds, hienTai);
+        List<CanhBaoViec> canhBaoList = BoTheoDoiLich.quetChoNguoiDung(ds, hienTai);
         List<ScheduleItem> sapToi = ds.layLichHienTai().stream()
             .filter(it -> !it.isHoanThanh() && it.getGioBatDau().isAfter(hienTai))
             .sorted(Comparator.comparing(ScheduleItem::getGioBatDau))
@@ -426,15 +426,12 @@ public class MainFrame extends JFrame {
      * @param buocXemNgay nếu true (do bấm nút tua nhanh) thì hiện kể cả đã nhắc rồi ở tầng thấp hơn trước đó trong cùng tick.
      */
     private void kiemTraCanhBao(boolean buocXemNgay) {
-        List<CanhBaoViec> canhBaoList = BoTheoDoiLich.quet(ds, dongHo.layGioHienTai());
+        List<CanhBaoViec> canhBaoList = BoTheoDoiLich.quetChoNguoiDung(ds, dongHo.layGioHienTai());
         if (canhBaoList.isEmpty()) {
             mascotPanel.capNhat(MascotArt.BieuCam.BINH_THUONG, "Lịch hôm nay ổn áp, cứ thế mà làm nha! 🐾");
             return;
         }
-        CanhBaoViec nangNhat = canhBaoList.get(0);
-        for (CanhBaoViec c : canhBaoList) {
-            if (c.getMucDo().ordinal() > nangNhat.getMucDo().ordinal()) nangNhat = c;
-        }
+        CanhBaoViec nangNhat = BoTheoDoiLich.chonCanhBaoChinh(canhBaoList);
         capNhatMascotTheoMucDo(nangNhat);
 
         String khoa = nangNhat.getItem().getId() + "::" + nangNhat.getMucDo();
@@ -588,10 +585,11 @@ public class MainFrame extends JFrame {
             // vì chỉ hỏi "có slot nào không" (coDuCho) rồi vẫn nhét vào giờ
             // CŨ của task — giờ cũ có thể đã bị chiếm bởi việc khác dù ngày
             // mai vẫn còn khe trống ở chỗ khác (xem DaySchedule#timKhoangTrongDauTien).
-            LocalTime slotTrong = lichNgayMai.timKhoangTrongDauTien(bi.layThoiLuong());
+            LocalTime slotTrong = lichNgayMai.timKhoangTrongGanGio(bi.layThoiLuong(), bi.getGioBatDau());
             if (slotTrong == null) {
                 soKhongTheSapXep++;
                 tenKhongTheSapXep.add(bi.getTen());
+                giuLaiHomNay(bi); // không để việc biến mất: ngày mai kín thì giữ lại ở lịch hôm nay
                 continue;
             }
             try {
@@ -600,6 +598,7 @@ public class MainFrame extends JFrame {
             } catch (IllegalArgumentException ex) {
                 soKhongTheSapXep++; // trùng giờ cố định ở ngày mai luôn -> đành chịu, không ép được
                 tenKhongTheSapXep.add(bi.getTen());
+                giuLaiHomNay(bi);
             }
         }
 
@@ -625,6 +624,15 @@ public class MainFrame extends JFrame {
         trungTamThongBao.them("✅ Đã áp dụng \"" + daChon.getTen() + "\": " + moTaToast, dongHo.layGioHienTai());
         Toast.thanhCong(this, "Đã áp dụng \"" + daChon.getTen() + "\"", moTaToast.toString());
         lamMoiTatCa();
+    }
+
+    /** Giữ lại việc (giờ gốc) trong lịch hôm nay khi không chuyển được sang ngày mai — tránh mất việc âm thầm. */
+    private void giuLaiHomNay(ScheduleItem bi) {
+        try {
+            if (!ds.layLichHienTai().contains(bi)) ds.themItem(bi);
+        } catch (IllegalArgumentException ignored) {
+            // trùng việc cố định: vẫn được ghi trong nhật ký sự cố + thông báo "chưa thể sắp xếp"
+        }
     }
 
     /**

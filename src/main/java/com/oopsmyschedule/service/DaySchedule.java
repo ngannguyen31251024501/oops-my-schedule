@@ -145,46 +145,49 @@ public class DaySchedule {
      */
 
     public LocalTime timKhoangTrongDauTien(Duration thoiLuong) {
-        // Biên cuối ngày là 23:59, không phải 24:00.
-        final int CUOI_NGAY = 23 * 3600 + 59 * 60; // 86340 giây
-        LocalTime cuoiNgay = LocalTime.ofSecondOfDay(CUOI_NGAY);
+        return timKhoangTrongTu(thoiLuong, LocalTime.MIDNIGHT);
+    }
 
+    /**
+     * Khe trống để CHUYỂN 1 việc sang ngày này: ưu tiên khe gần/sau giờ mong muốn (giữ đúng buổi — bữa tối
+     * không nhảy về chiều, việc học không rơi vào 2–3 giờ sáng), nếu không có mới thử từ 06:00. Không bao giờ
+     * trả về khe trước 06:00. {@code null} nếu không có chỗ.
+     */
+    public LocalTime timKhoangTrongGanGio(Duration thoiLuong, LocalTime gioMongMuon) {
+        LocalTime sang = LocalTime.of(6, 0);
+        LocalTime tu = gioMongMuon.isBefore(sang) ? sang : gioMongMuon;
+        LocalTime khe = timKhoangTrongTu(thoiLuong, tu);
+        if (khe == null && tu.isAfter(sang)) {
+            khe = timKhoangTrongTu(thoiLuong, sang);
+        }
+        return khe;
+    }
+
+    private LocalTime timKhoangTrongTu(Duration thoiLuong, LocalTime tuGio) {
+        LocalTime cuoiNgay = LocalTime.of(23, 59);
         List<ScheduleItem> daSapXep = new ArrayList<>(danhSachItem);
-        daSapXep.sort(
-                (a, b) -> a.getGioBatDau().compareTo(b.getGioBatDau())
-        );
+        daSapXep.sort((a, b) -> a.getGioBatDau().compareTo(b.getGioBatDau()));
 
-        LocalTime conTro = LocalTime.MIDNIGHT;
-
+        LocalTime conTro = tuGio;
         for (ScheduleItem item : daSapXep) {
             if (item.getGioBatDau().isAfter(conTro)) {
-                long phutTrong = Duration.between(
-                        conTro, item.getGioBatDau()
-                ).toMinutes();
-
+                long phutTrong = Duration.between(conTro, item.getGioBatDau()).toMinutes();
                 if (phutTrong >= thoiLuong.toMinutes()) {
                     return conTro;
                 }
             }
-
             if (item.getGioKetThuc().isAfter(conTro)) {
                 conTro = item.getGioKetThuc();
             }
         }
-
         if (!conTro.isAfter(cuoiNgay)) {
-            long phutConLai = Duration.between(
-                    conTro, cuoiNgay
-            ).toMinutes();
-
+            long phutConLai = Duration.between(conTro, cuoiNgay).toMinutes();
             if (phutConLai >= thoiLuong.toMinutes()) {
                 return conTro;
             }
         }
-
         return null;
     }
-
 
     /**
      * Dùng bởi {@link LuuLich#doc} để khôi phục lại 2 bộ đếm/nhật ký không

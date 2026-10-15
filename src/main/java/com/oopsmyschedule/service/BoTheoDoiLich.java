@@ -50,4 +50,36 @@ public final class BoTheoDoiLich {
         }
         return ketQua;
     }
+
+    /**
+     * Bản dành cho UI: như {@link #quet(DaySchedule, LocalTime)} nhưng KHÔNG coi việc cố định ĐANG DIỄN RA
+     * (vd lớp học đã vào học) là "trễ" — người dùng đang ở trong đó, không có gì để nhắc.
+     */
+    public static List<CanhBaoViec> quetChoNguoiDung(DaySchedule ds, LocalTime hienTai) {
+        List<CanhBaoViec> ketQua = new ArrayList<>();
+        for (CanhBaoViec c : quet(ds, hienTai)) {
+            ScheduleItem it = c.getItem();
+            if (it instanceof com.oopsmyschedule.domain.FixedEvent && it.getGioKetThuc().isAfter(hienTai)) {
+                continue;
+            }
+            ketQua.add(c);
+        }
+        return ketQua;
+    }
+
+    /**
+     * Chọn 1 cảnh báo chính để hiện banner/mascot: mức nặng nhất; nếu bằng nhau thì việc trễ LÂU nhất (gốc của
+     * chuỗi trễ), rồi theo giờ bắt đầu — ổn định, không phụ thuộc thứ tự danh sách. {@code null} nếu rỗng.
+     */
+    public static CanhBaoViec chonCanhBaoChinh(List<CanhBaoViec> danhSach) {
+        CanhBaoViec chon = null;
+        for (CanhBaoViec c : danhSach) {
+            if (chon == null
+                || c.getMucDo().ordinal() > chon.getMucDo().ordinal()
+                || (c.getMucDo() == chon.getMucDo() && c.getSoPhutTre() > chon.getSoPhutTre())) {
+                chon = c;
+            }
+        }
+        return chon;
+    }
 }
