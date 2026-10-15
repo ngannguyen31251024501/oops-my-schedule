@@ -4,7 +4,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/** Sự cố "Tôi bị trễ X phút" — dờii từng item còn dời được, giữ nguyên item cố định. */
+/**
+ * Lưu ý: engine tái sắp xếp KHÔNG gọi apDung để dời hàng loạt (xem AbstractReplanStrategy, K-14) —
+ * chỉ dùng số phút trễ để xác định mốc sớm nhất cho việc đã lỡ giờ. apDung chỉ còn là API mức item
+ * và không bao giờ cuộn vòng qua nửa đêm.
+ *
+ * Sự cố "Tôi bị trễ X phút" — dời từng item còn dời được, giữ nguyên item cố định. */
 public class DelayDisruption extends Disruption {
 
     private final int soPhutTre;
@@ -15,6 +20,9 @@ public class DelayDisruption extends Disruption {
         super("Bị trễ " + soPhutTre + " phút");
         if (soPhutTre <= 0) {
             throw new IllegalArgumentException("Số phút trễ phải > 0.");
+        }
+        if (soPhutTre > 1440) { // INV-16
+            throw new IllegalArgumentException("Số phút trễ không được quá 1440 (1 ngày).");
         }
         this.soPhutTre = soPhutTre;
     }
@@ -30,10 +38,10 @@ public class DelayDisruption extends Disruption {
             // Chỉ gọi xuLyKhiBiTre() cho item nào tự nhận là dời được — tránh
             // gọi thẳng vào FixedEvent (sẽ ném IllegalStateException, đúng ý
             // thiết kế: exception là để bắt lỗi lập trình, không phải luồng bình thường).
-            if (!item.coTheDoiLich()) {
+            if (item.isHoanThanh() || !item.coTheDoiLich()) { // INV-18: việc đã xong không bị dời
                 continue;
             }
-            if (item.vuotNuaDemNeuDoi(soPhutTre)) {
+            if (!item.doiDuocTrongNgay(soPhutTre)) { // K-14: không cuộn vòng qua nửa đêm
                 viecVuotNgay.add(item); // không dời, giữ nguyên giờ
                 continue;
             }

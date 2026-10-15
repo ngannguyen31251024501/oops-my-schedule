@@ -158,7 +158,7 @@ public final class LuuLich {
         "\\{[^{}]*?\"id\"\\s*:\\s*\"" + CHUOI_CO_ESCAPE + "\"[^{}]*?\"loai\"\\s*:\\s*\"([^\"]*)\"[^{}]*?" +
         "\"ten\"\\s*:\\s*\"" + CHUOI_CO_ESCAPE + "\"[^{}]*?\"gioBatDau\"\\s*:\\s*\"([^\"]*)\"[^{}]*?" +
         "\"gioKetThuc\"\\s*:\\s*\"([^\"]*)\"[^{}]*?\"doUuTien\"\\s*:\\s*\"([^\"]*)\"[^{}]*?" +
-        "\"hoanThanh\"\\s*:\\s*(true|false)([^{}]*)\\}");
+                "\"hoanThanh\"\\s*:\\s*(true|false)([^{}]*)}");
     private static final Pattern MAU_HAN_CHOT = Pattern.compile("\"hanChot\"\\s*:\\s*\"([^\"]*)\"");
     private static final Pattern MAU_NGAY_THUC_HIEN = Pattern.compile("\"ngayThucHien\"\\s*:\\s*\"([^\"]*)\"");
     private static final Pattern MAU_CANH_BAO = Pattern.compile("\"canhBaoTreHan\"\\s*:\\s*(true|false)");
@@ -170,7 +170,7 @@ public final class LuuLich {
     private static final Pattern MAU_NHAT_KY = Pattern.compile(
         "\\{[^{}]*?\"gio\"\\s*:\\s*\"([^\"]*)\"[^{}]*?\"moTaSuCo\"\\s*:\\s*\"" + CHUOI_CO_ESCAPE + "\"[^{}]*?" +
         "\"tenPhuongAn\"\\s*:\\s*\"" + CHUOI_CO_ESCAPE + "\"[^{}]*?\"danhSachThayDoi\"\\s*:\\s*\"" + CHUOI_CO_ESCAPE + "\"[^{}]*?" +
-        "\"tenKhongTheSapXep\"\\s*:\\s*\"" + CHUOI_CO_ESCAPE + "\"[^{}]*?\\}");
+                "\"tenKhongTheSapXep\"\\s*:\\s*\"" + CHUOI_CO_ESCAPE + "\"[^{}]*?}");
     private static final Pattern MAU_CAC_VIEC = Pattern.compile(
             "\"cacViec\"\\s*:\\s*\\[(.*?)\\]",
             Pattern.DOTALL);

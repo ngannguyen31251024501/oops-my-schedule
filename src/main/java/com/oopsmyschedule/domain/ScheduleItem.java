@@ -46,14 +46,14 @@ public abstract class ScheduleItem {
      * sách đang xử lý.
      */
     protected ScheduleItem(String id, String ten, LocalTime gioBatDau, LocalTime gioKetThuc,
-                           PriorityLevel doUuTien, boolean hoanThanh) {
+                            PriorityLevel doUuTien, boolean hoanThanh) {
         // Guard clause: không cho tạo item có giờ bắt đầu >= giờ kết thúc.
         if (gioBatDau == null || gioKetThuc == null) {
             throw new IllegalArgumentException("Giờ bắt đầu / giờ kết thúc không được null.");
         }
         if (!gioBatDau.isBefore(gioKetThuc)) {
             throw new IllegalArgumentException(
-                    "Giờ bắt đầu (" + gioBatDau + ") phải trước giờ kết thúc (" + gioKetThuc + ").");
+                "Giờ bắt đầu (" + gioBatDau + ") phải trước giờ kết thúc (" + gioKetThuc + ").");
         }
         if (ten == null || ten.isBlank()) {
             throw new IllegalArgumentException("Tên việc không được để trống.");
@@ -88,10 +88,11 @@ public abstract class ScheduleItem {
      * khoảng thời lượng (duration). Dùng chung cho các lớp con "linh hoạt".
      */
     protected void doiLich(int soPhut) {
+        kiemTraChuaHoanThanh("dời lịch"); // INV-18
         // INV-03: guard TRƯỚC khi đổi bất kỳ field nào, để object không bị đổi nửa chừng.
         if (vuotNuaDemNeuDoi(soPhut)) {
             throw new IllegalArgumentException(
-                    "Dời " + soPhut + " phút sẽ làm giờ kết thúc (" + gioKetThuc + ") vượt 23:59.");
+                "Dời " + soPhut + " phút sẽ làm giờ kết thúc (" + gioKetThuc + ") vượt 23:59.");
         }
         this.gioBatDau = this.gioBatDau.plusMinutes(soPhut);
         this.gioKetThuc = this.gioKetThuc.plusMinutes(soPhut);
@@ -109,8 +110,27 @@ public abstract class ScheduleItem {
         return gioKetThuc.toSecondOfDay() + soPhut * 60L > CUOI_NGAY_GIAY;
     }
 
+    /**
+     * Giữ lại từ main (K-14): dời {@code soPhut} phút có còn nằm trong ngày (không cuộn
+     * vòng qua 00:00) không? Với soPhut >= 0 tương đương {@code !vuotNuaDemNeuDoi(soPhut)}.
+     */
+    public boolean doiDuocTrongNgay(int soPhut) {
+        long batDau = gioBatDau.toSecondOfDay() + soPhut * 60L;
+        long ketThuc = gioKetThuc.toSecondOfDay() + soPhut * 60L;
+        return batDau >= 0 && ketThuc <= 24 * 3600L - 60;
+    }
+
+    /** INV-18: việc đã hoàn thành không bị dời / đặt lại giờ. */
+    private void kiemTraChuaHoanThanh(String hanhDong) {
+        if (hoanThanh) {
+            throw new IllegalStateException(
+                "Việc \"" + ten + "\" đã hoàn thành, không thể " + hanhDong + ".");
+        }
+    }
+
     /** Đặt lại khung giờ tuyệt đối (dùng khi ReplanEngine cần "ép" 1 vị trí mới cụ thể). */
     protected void datLaiKhungGio(LocalTime moiBatDau, LocalTime moiKetThuc) {
+        kiemTraChuaHoanThanh("đặt lại khung giờ"); // INV-18
         if (!moiBatDau.isBefore(moiKetThuc)) {
             throw new IllegalArgumentException("Khung giờ mới không hợp lệ: " + moiBatDau + " - " + moiKetThuc);
         }
@@ -195,7 +215,7 @@ public abstract class ScheduleItem {
      * Đồng nhất theo {@code id}, KHÔNG theo nội dung (giờ giấc/tên có thể bị
      * ReplanEngine chỉnh sửa liên tục). Bắt buộc phải có để
      * {@link java.util.List#remove(Object)} trong {@link SkipDisruption} và
-     * mọi thao tác đối chiếu "cùngg 1 việc" giữa bản gốc và bản sao (xem
+     * mọi thao tác đối chiếu "cùng 1 việc" giữa bản gốc và bản sao (xem
      * {@link com.oopsmyschedule.service.DaySchedule#saoChep()}) hoạt động
      * đúng — nếu không override, Object.equals() mặc định so theo địa chỉ
      * tham chiếu, khiến 1 item và bản sao "giống hệt" của nó bị coi là 2
