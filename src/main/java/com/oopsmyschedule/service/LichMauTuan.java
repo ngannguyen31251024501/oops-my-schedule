@@ -61,8 +61,16 @@ public final class LichMauTuan {
         DaySchedule ds = new DaySchedule(ngay);
         themCaNhanNgayThuong(ds);
         ds.themItem(new FixedEvent("Học ở trường (ca sáng)", LocalTime.of(7, 10), LocalTime.of(11, 10), PriorityLevel.BAT_BUOC));
-        ds.themItem(new DeadlineTask("Làm bài tập về nhà", LocalTime.of(13, 30), LocalTime.of(15, 0),
-            PriorityLevel.NEN_LAM, LocalDateTime.of(ngay.plusDays(1), LocalTime.of(23, 59))));
+
+        ds.themItem(new DeadlineTask(
+                "Làm bài tập về nhà",
+                LocalTime.of(13, 30),
+                LocalTime.of(15, 0),
+                PriorityLevel.NEN_LAM,
+                LocalDateTime.of(ngay.plusDays(1), LocalTime.of(23, 59)),
+                ngay
+        ));
+
         ds.themItem(new RecurringEvent("Học tiếng Anh", LocalTime.of(17, 0), LocalTime.of(17, 30), PriorityLevel.NEN_LAM, 0));
         return ds;
     }
@@ -91,8 +99,16 @@ public final class LichMauTuan {
         DaySchedule ds = new DaySchedule(ngay);
         themCaNhanNgayThuong(ds);
         ds.themItem(new FixedEvent("Học ở trường (ca sáng)", LocalTime.of(7, 10), LocalTime.of(11, 10), PriorityLevel.BAT_BUOC));
-        ds.themItem(new DeadlineTask("Nộp báo cáo tuần", LocalTime.of(13, 30), LocalTime.of(15, 0),
-            PriorityLevel.NEN_LAM, LocalDateTime.of(ngay, LocalTime.of(23, 59))));
+
+        ds.themItem(new DeadlineTask(
+                "Nộp báo cáo tuần",
+                LocalTime.of(13, 30),
+                LocalTime.of(15, 0),
+                PriorityLevel.NEN_LAM,
+                LocalDateTime.of(ngay, LocalTime.of(23, 59)),
+                ngay
+        ));
+
         return ds;
     }
 
