@@ -4,17 +4,26 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/** Sự cố "Tôi bị trễ X phút" — dời từng item còn dời được, giữ nguyên item cố định. */
+/**
+ * Sự cố "Tôi bị trễ X phút" — dời từng item còn dời được, giữ nguyên item cố định.
+ * Bỏ qua: việc đã hoàn thành, RecurringEvent đã bỏ qua hôm nay, và việc sẽ vượt 23:59
+ * (những việc vượt được ghi vào {@link #getViecVuotNgay()} để Strategy đề xuất sang ngày mai).
+ */
 public class DelayDisruption extends Disruption {
 
+    /** INV-16: tối đa 1 ngày. */
+    private static final int SO_PHUT_TOI_DA = 1440;
+
     private final int soPhutTre;
-    /** Việc dời sẽ vượt 23:59 nên KHÔNG bị dời; Strategy đọc để đề xuất sang ngày mai. */
     private final List<ScheduleItem> viecVuotNgay = new ArrayList<>();
 
     public DelayDisruption(int soPhutTre) {
         super("Bị trễ " + soPhutTre + " phút");
         if (soPhutTre <= 0) {
             throw new IllegalArgumentException("Số phút trễ phải > 0.");
+        }
+        if (soPhutTre > SO_PHUT_TOI_DA) {
+            throw new IllegalArgumentException("Số phút trễ không được quá " + SO_PHUT_TOI_DA + ".");
         }
         this.soPhutTre = soPhutTre;
     }
@@ -23,26 +32,26 @@ public class DelayDisruption extends Disruption {
         return soPhutTre;
     }
 
+    /** Các việc bị bỏ qua ở lần apDung gần nhất vì dời sẽ vượt 23:59 (chưa bị dời). */
+    public List<ScheduleItem> getViecVuotNgay() {
+        return Collections.unmodifiableList(viecVuotNgay);
+    }
+
     @Override
     public void apDung(List<ScheduleItem> danhSachConLai) {
-        viecVuotNgay.clear(); // engine dùng chung 1 disruption cho 3 strategy
+        viecVuotNgay.clear();   // cùng 1 sự cố được 3 chiến lược dùng lại, tránh cộng dồn
         for (ScheduleItem item : danhSachConLai) {
-            // Chỉ gọi xuLyKhiBiTre() cho item nào tự nhận là dời được — tránh
-            // gọi thẳng vào FixedEvent (sẽ ném IllegalStateException, đúng ý
-            // thiết kế: exception là để bắt lỗi lập trình, không phải luồng bình thường).
-            if (!item.coTheDoiLich()) {
+            if (!item.coTheDoiLich() || item.isHoanThanh()) {
+                continue;
+            }
+            if (item instanceof RecurringEvent re && re.isBoQuaHomNay()) {
                 continue;
             }
             if (item.vuotNuaDemNeuDoi(soPhutTre)) {
-                viecVuotNgay.add(item); // không dời, giữ nguyên giờ
+                viecVuotNgay.add(item);
                 continue;
             }
             item.xuLyKhiBiTre(soPhutTre);
         }
-    }
-
-    /** Các việc bị bỏ qua ở lần {@link #apDung} gần nhất vì dời sẽ vượt 23:59. */
-    public List<ScheduleItem> getViecVuotNgay() {
-        return Collections.unmodifiableList(new ArrayList<>(viecVuotNgay));
     }
 }
