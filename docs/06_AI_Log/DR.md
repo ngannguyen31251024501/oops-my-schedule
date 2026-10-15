@@ -9,10 +9,10 @@
 
 | Mã | Ngày | Task | Công cụ | Mức dùng được (nguyên / sửa nhẹ / sửa nhiều / bỏ) | Chọn vào báo cáo |
 |---|---|---|---|---|---|
-| AI-DR-01 | 16/10 | DR-02 (gỡ xung đột merge) | Claude | Sửa nhẹ | ✔ |
+| AI-DR-01 | 16/10 | DR-02 (gỡ xung đột merge) | Claude | Sửa nhẹ |  |
 | AI-DR-02 | 16/10 | DR-01b (guard DeadlineTask) | Claude | Nguyên | ✔ |
 | AI-DR-03 | 16/10 | DR-02 (thứ tự sửa và merge) | Claude | Sửa nhẹ (AI trả sai một phần) | ✔ |
-| AI-DR-04 | 16/10 | DR-01a (PR #6 còn đỏ) | Claude | Nguyên | |
+| AI-DR-04 | 16/10 | DR-01a (PR #6 còn đỏ) | Claude | Nguyên |✔|
 | AI-DR-05 | 16/10 | DR-02 (báo Ngân cách merge) | Claude | Sửa nhẹ | |
 
 ## Mẫu một mục (sao chép phần này cho mỗi prompt, đổi số thứ tự)
