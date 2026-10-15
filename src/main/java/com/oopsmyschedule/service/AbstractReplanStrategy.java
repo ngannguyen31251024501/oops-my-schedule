@@ -29,6 +29,11 @@ public abstract class AbstractReplanStrategy implements ReplanStrategy {
         DaySchedule lichTruoc = ds.saoChep();
         DaySchedule lichSau = ds.saoChep();
         KetQuaSoSanh ketQua = new KetQuaSoSanh(lichTruoc, lichSau);
+        // K-13: chụp giờ ban đầu theo id (LocalTime bất biến nên không bị sửa ngầm)
+        java.util.Map<String, LocalTime[]> gioBanDau = new java.util.HashMap<>();
+        for (ScheduleItem goc : lichTruoc.layLichHienTai()) {
+            gioBanDau.put(goc.getId(), new LocalTime[] { goc.getGioBatDau(), goc.getGioKetThuc() });
+        }
 
         List<ScheduleItem> toanBo = new ArrayList<>(lichSau.layLichHienTai());
 
@@ -87,7 +92,7 @@ public abstract class AbstractReplanStrategy implements ReplanStrategy {
             ScheduleItem item = conLai.get(i);
 
             if (item instanceof FixedEvent) {
-                if (item.isHoanThanh()) {                    // K-03: giữ nguyên giờ, vẫn chiếm chỗ
+                if (item.isHoanThanh()) {  // hai nhánh giống hệt nhau                 // K-03: giữ nguyên giờ, vẫn chiếm chỗ
                     conTro = maxGio(conTro, item.getGioKetThuc());
                     ketQuaCuoi.add(item);
                     continue;
@@ -129,6 +134,7 @@ public abstract class AbstractReplanStrategy implements ReplanStrategy {
                     ketQuaCuoi.add(item);
                     continue; // không cập nhật conTro vì đã bỏ qua
                 }
+
                 // FIX BUG cross-midnight (audit bản 10, mục 1): trước đây khi
                 // vuotQuaNgay=true, code vẫn ép đặt item vào batDauMongMuon -
                 // CUOI_NGAY (23:59), ÂM THẦM CẮT MẤT thời lượng thật của task
@@ -168,6 +174,31 @@ public abstract class AbstractReplanStrategy implements ReplanStrategy {
         List<ScheduleItem> tongHop = new ArrayList<>(daQua);
         tongHop.addAll(ketQuaCuoi);
         lichSau.thayTheToanBo(tongHop);
+        // K-13: đối chiếu giờ gốc với lịch kết quả theo id; chỉ bổ sung chỗ chưa có mô tả
+        java.util.Set<String> idConLai = new java.util.HashSet<>();
+        for (ScheduleItem sau : lichSau.layLichHienTai()) {
+            idConLai.add(sau.getId());
+            String ten = "\"" + sau.getTen() + "\"";
+            LocalTime[] cu = gioBanDau.get(sau.getId());
+            if (cu == null) {
+                if (!daCoMoTa(ketQua, ten)) {
+                    ketQua.themThayDoi(ten + ": được thêm vào lịch.");
+                }
+            } else if (!cu[0].equals(sau.getGioBatDau()) || !cu[1].equals(sau.getGioKetThuc())) {
+                if (!daCoMoTa(ketQua, ten)) {
+                    ketQua.themThayDoi(ten + ": dời từ " + cu[0] + "-" + cu[1]
+                            + " sang " + sau.getGioBatDau() + "-" + sau.getGioKetThuc() + ".");
+                }
+            } // giờ không đổi thì không ghi gì
+        }
+        for (ScheduleItem truoc : lichTruoc.layLichHienTai()) {
+            if (!idConLai.contains(truoc.getId())) {
+                String ten = "\"" + truoc.getTen() + "\"";
+                if (!daCoMoTa(ketQua, ten)) {
+                    ketQua.themThayDoi(ten + ": không còn trong lịch hôm nay.");
+                }
+            }
+        }
 
         if (ketQua.getDanhSachThayDoi().isEmpty()) {
             ketQua.themThayDoi("Không có việc nào cần dời — lịch vẫn ổn.");
@@ -219,5 +250,14 @@ public abstract class AbstractReplanStrategy implements ReplanStrategy {
             }
         }
         return null;
+    }
+    /** K-13: item đã có dòng mô tả (bắt đầu bằng "tên") thì không ghi thêm lần hai. */
+    private static boolean daCoMoTa(KetQuaSoSanh ketQua, String tenCoNgoacKep) {
+        for (String s : ketQua.getDanhSachThayDoi()) {
+            if (s.startsWith(tenCoNgoacKep)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
