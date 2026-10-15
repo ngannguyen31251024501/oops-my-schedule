@@ -36,9 +36,9 @@ public class ReplanEngine {
     public List<PhuongAn> taoCacPhuongAn(DaySchedule ds, Disruption disruption, LocalTime thoiDiemHienTai) {
         // BR-11/BR-12: reject sớm thay vì để NullPointerException mù mờ nổ ra
         // giữa chừng thuật toán quét xung đột (khó truy vết).
-        Objects.requireNonNull(ds, "DaySchedule không được null.");
-        Objects.requireNonNull(disruption, "Disruption không được null.");
-        Objects.requireNonNull(thoiDiemHienTai, "Thời điểm hiện tại không được null.");
+        if (ds == null || disruption == null || thoiDiemHienTai == null) {
+            throw new IllegalArgumentException("ds, disruption, thoiDiemHienTai không được null");
+        }
         List<PhuongAn> ketQua = new ArrayList<>();
         for (ReplanStrategy chienLuoc : cacChienLuoc) {
             KetQuaSoSanh kq = chienLuoc.apDung(ds, disruption, thoiDiemHienTai);
