@@ -14,10 +14,13 @@ public class FlexibleTask extends ScheduleItem {
         super(ten, gioBatDau, gioKetThuc, doUuTien);
     }
 
-    /** Copy constructor giữ nguyên id + trạng thái (xem javadoc ở ScheduleItem). */
+    /** Copy constructor giữ nguyên id + trạng thái. INV-14: soLanDaDoi không âm. */
     public FlexibleTask(String id, String ten, LocalTime gioBatDau, LocalTime gioKetThuc,
-                         PriorityLevel doUuTien, boolean hoanThanh, int soLanDaDoi) {
+                        PriorityLevel doUuTien, boolean hoanThanh, int soLanDaDoi) {
         super(id, ten, gioBatDau, gioKetThuc, doUuTien, hoanThanh);
+        if (soLanDaDoi < 0) {
+            throw new IllegalArgumentException("Số lần đã dời không được âm: " + soLanDaDoi);
+        }
         this.soLanDaDoi = soLanDaDoi;
     }
 
@@ -28,7 +31,7 @@ public class FlexibleTask extends ScheduleItem {
 
     @Override
     public void xuLyKhiBiTre(int soPhutTre) {
-        doiLich(soPhutTre);
+        doiLich(soPhutTre);   // ném lỗi trước nếu đã xong / vượt 23:59 -> không tăng đếm sai
         soLanDaDoi++;
     }
 
