@@ -8,7 +8,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 /** T-04 (INV-03,K-01/K-02): chặn dời việc qua 23:59.. */
-class ScheduleItemTest {
+class ScheduleItemMidnightTest {
 
     private static FlexibleTask fx(int h1, int m1, int h2, int m2) {
         return new FlexibleTask("v", LocalTime.of(h1, m1), LocalTime.of(h2, m2), PriorityLevel.NEN_LAM);
