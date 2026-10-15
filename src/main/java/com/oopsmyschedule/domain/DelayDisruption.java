@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/** Sự cố "Tôi bị trễ X phút" — dời từng item còn dời được, giữ nguyên item cố định. */
+/** Sự cố "Tôi bị trễ X phút" — dờii từng item còn dời được, giữ nguyên item cố định. */
 public class DelayDisruption extends Disruption {
 
     private final int soPhutTre;

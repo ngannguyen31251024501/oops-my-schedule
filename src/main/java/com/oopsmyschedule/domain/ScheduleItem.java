@@ -195,7 +195,7 @@ public abstract class ScheduleItem {
      * Đồng nhất theo {@code id}, KHÔNG theo nội dung (giờ giấc/tên có thể bị
      * ReplanEngine chỉnh sửa liên tục). Bắt buộc phải có để
      * {@link java.util.List#remove(Object)} trong {@link SkipDisruption} và
-     * mọi thao tác đối chiếu "cùng 1 việc" giữa bản gốc và bản sao (xem
+     * mọi thao tác đối chiếu "cùngg 1 việc" giữa bản gốc và bản sao (xem
      * {@link com.oopsmyschedule.service.DaySchedule#saoChep()}) hoạt động
      * đúng — nếu không override, Object.equals() mặc định so theo địa chỉ
      * tham chiếu, khiến 1 item và bản sao "giống hệt" của nó bị coi là 2
