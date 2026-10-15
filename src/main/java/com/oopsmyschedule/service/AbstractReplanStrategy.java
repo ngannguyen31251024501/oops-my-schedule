@@ -63,9 +63,15 @@ public abstract class AbstractReplanStrategy implements ReplanStrategy {
 
         // Bước 1: phản ứng "máy móc" cấp item. SkipDisruption đã xử lý xong ở
         // Bước 0 nên tới đây chỉ còn DelayDisruption cần áp dụng.
+        List<ScheduleItem> daXong = new ArrayList<>();
+        for (ScheduleItem it : conLai) {
+            if (it.isHoanThanh()) daXong.add(it);
+        }
+        conLai.removeAll(daXong);                    // K-03: không dời việc đã xong
         if (!(disruption instanceof SkipDisruption)) {
             disruption.apDung(conLai);
         }
+        conLai.addAll(daXong);                       // trả lại để chiếm khung giờ
         conLai.sort((a, b) -> a.getGioBatDau().compareTo(b.getGioBatDau()));
 
         // Bước 1.5: hook cho chiến lược muốn chủ động xử lý TRƯỚC khi quét
@@ -81,9 +87,10 @@ public abstract class AbstractReplanStrategy implements ReplanStrategy {
             ScheduleItem item = conLai.get(i);
 
             if (item instanceof FixedEvent) {
-                if (item.getGioBatDau().isBefore(conTro)) {
-                    ketQua.themCanhBao("Xung đột: các việc trước đó lấn vào giờ cố định \""
-                        + item.getTen() + "\" (" + item.getGioBatDau() + " - " + item.getGioKetThuc() + ").");
+                if (item.isHoanThanh()) {                    // K-03: giữ nguyên giờ, vẫn chiếm chỗ
+                    conTro = maxGio(conTro, item.getGioKetThuc());
+                    ketQuaCuoi.add(item);
+                    continue;
                 }
                 conTro = maxGio(conTro, item.getGioKetThuc());
                 ketQuaCuoi.add(item);
@@ -207,7 +214,7 @@ public abstract class AbstractReplanStrategy implements ReplanStrategy {
 
     private static LocalTime timGioBatDauFixedEventTiepTheo(List<ScheduleItem> danhSach, int tuIndex) {
         for (int j = tuIndex + 1; j < danhSach.size(); j++) {
-            if (danhSach.get(j) instanceof FixedEvent) {
+            if (danhSach.get(j) instanceof FixedEvent || danhSach.get(j).isHoanThanh()) {
                 return danhSach.get(j).getGioBatDau();
             }
         }
