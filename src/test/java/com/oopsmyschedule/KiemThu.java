@@ -372,12 +372,11 @@ public class KiemThu {
     private static void val02_KichBanTaiLieu_3PhuongAnThatSuKhacNhau() {
         DaySchedule ds = new DaySchedule(LocalDate.now());
         LocalDate homNay = LocalDate.now();
-        ds.themItem(new FixedEvent("Học", LocalTime.of(8, 0), LocalTime.of(12, 0), PriorityLevel.BAT_BUOC));
-        ds.themItem(new DeadlineTask("Làm project", LocalTime.of(12, 0), LocalTime.of(13, 0), PriorityLevel.NEN_LAM,
+        // K-14: báo trễ KHÔNG còn dời hàng loạt — chỉ việc thật sự bị ảnh hưởng mới bị đẩy. Kịch bản: 08:00
+        // "Làm project" đã tới giờ, báo trễ 150' -> bị đẩy tới 10:30-12:00 và đụng "Họp tối" 11:30.
+        ds.themItem(new DeadlineTask("Làm project", LocalTime.of(8, 0), LocalTime.of(9, 30), PriorityLevel.NEN_LAM,
             LocalDateTime.of(homNay, LocalTime.of(23, 59)), homNay));
-        ds.themItem(new FlexibleTask("Tập thể dục", LocalTime.of(13, 0), LocalTime.of(14, 0), PriorityLevel.NEN_LAM));
-        ds.themItem(new FlexibleTask("Xem phim", LocalTime.of(14, 0), LocalTime.of(15, 0), PriorityLevel.CO_THE_BO));
-        ds.themItem(new FixedEvent("Họp tối", LocalTime.of(14, 30), LocalTime.of(15, 0), PriorityLevel.BAT_BUOC));
+        ds.themItem(new FixedEvent("Họp tối", LocalTime.of(11, 30), LocalTime.of(12, 0), PriorityLevel.BAT_BUOC));
 
         KetQuaSoSanh minimize = new MinimizeDisruptionStrategy().apDung(ds.saoChep(), new DelayDisruption(150), LocalTime.of(8, 0));
         KetQuaSoSanh deadlineFirst = new DeadlineFirstStrategy().apDung(ds.saoChep(), new DelayDisruption(150), LocalTime.of(8, 0));
