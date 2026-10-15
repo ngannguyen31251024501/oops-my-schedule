@@ -9,6 +9,7 @@ import java.awt.*;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -159,8 +160,10 @@ public class TrangChuPanel extends JPanel {
             noiDung.add(Box.createVerticalStrut(8));
             List<ScheduleItem> conLai = sapToi.size() > 1 ? sapToi.subList(1, Math.min(sapToi.size(), 4)) : List.of();
             for (ScheduleItem item : conLai) {
-                noiDung.add(theBinhThuong(item, "Bắt đầu lúc " + item.getGioBatDau()));
-                noiDung.add(Box.createVerticalStrut(8));
+                noiDung.add(theBinhThuong(
+                        item,
+                        "Bắt đầu lúc " + item.getGioBatDau().format(DateTimeFormatter.ofPattern("HH:mm"))
+                ));                noiDung.add(Box.createVerticalStrut(8));
             }
             if (sapToi.size() > 4) {
                 JLabel conNua = new JLabel("… và " + (sapToi.size() - 4) + " việc nữa, xem ở \"Xem cả ngày\"");
@@ -217,8 +220,11 @@ public class TrangChuPanel extends JPanel {
         JPanel giua = new JPanel();
         giua.setOpaque(false);
         giua.setLayout(new BoxLayout(giua, BoxLayout.Y_AXIS));
+        DateTimeFormatter dinhDangGio = DateTimeFormatter.ofPattern("HH:mm");
+
         JLabel dong1 = new JLabel(BieuTuongViec.cua(item) + " " + DinhDang.rutGon(item.getTen(), 28)
-            + "  (" + item.getGioBatDau() + " – " + item.getGioKetThuc() + ")");
+                + "  (" + item.getGioBatDau().format(dinhDangGio)
+                + " – " + item.getGioKetThuc().format(dinhDangGio) + ")");
         dong1.setFont(VintageTheme.FONT_NHAN);
         dong1.setToolTipText(item.getTen());
         JLabel dong2 = new JLabel("🚨 App phát hiện: đã trễ " + DinhDang.phut(c.getSoPhutTre()) + " — " + c.getMucDo().getNhan());
@@ -295,8 +301,8 @@ public class TrangChuPanel extends JPanel {
         dong1.setFont(VintageTheme.FONT_TIEU_DE.deriveFont(17f));
         dong1.setForeground(VintageTheme.CHU_CHINH);
         dong1.setToolTipText(item.getTen());
-        JLabel dong2 = new JLabel(item.getGioBatDau() + " – " + item.getGioKetThuc()
-            + "   ·   " + item.loaiViec() + " · " + item.getDoUuTien());
+        JLabel dong2 = new JLabel(DinhDang.gio(item.getGioBatDau()) + " – " + DinhDang.gio(item.getGioKetThuc())
+                + "   ·   " + item.loaiViec() + " · " + item.getDoUuTien());
         dong2.setFont(VintageTheme.FONT_PHU_DE);
         dong2.setForeground(VintageTheme.CHU_MO);
         giua.add(dong1);
@@ -329,7 +335,7 @@ public class TrangChuPanel extends JPanel {
         giua.setOpaque(false);
         giua.setLayout(new BoxLayout(giua, BoxLayout.Y_AXIS));
         giua.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 0));
-        JLabel dong1 = new JLabel(item.getGioBatDau() + " – " + item.getGioKetThuc() + "   "
+        JLabel dong1 = new JLabel(item.getGioBatDau().format(DateTimeFormatter.ofPattern("HH:mm")) + " – " + item.getGioKetThuc().format(DateTimeFormatter.ofPattern("HH:mm")) + "   "
             + BieuTuongViec.cua(item) + " " + DinhDang.rutGon(item.getTen(), 26));
         dong1.setFont(VintageTheme.FONT_NHAN);
         dong1.setToolTipText(item.getTen());
@@ -363,7 +369,10 @@ public class TrangChuPanel extends JPanel {
 
         bieuTuongBuoi.setText(icon);
         nhanChao.setText("Xin chào! " + buoi + " tốt lành ✨");
-        nhanNgay.setText(tenThu(LocalDate.now()) + ", " + LocalDate.now() + "  ·  " + hienTai.withNano(0));
+        nhanNgay.setText(
+                tenThu(LocalDate.now()) + ", " + LocalDate.now()
+                        + "  ·  " + hienTai.format(DateTimeFormatter.ofPattern("HH:mm"))
+        );
     }
 
     /**

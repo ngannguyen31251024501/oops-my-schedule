@@ -5,6 +5,7 @@ import com.oopsmyschedule.service.KetQuaSoSanh;
 
 import javax.swing.*;
 import java.awt.*;
+import java.time.format.DateTimeFormatter;
 
 /** Dialog "So sánh lịch trình" — hiển thị trước/sau, danh sách thay đổi, cảnh báo. */
 public class ComparisonDialog extends JDialog {
@@ -73,6 +74,8 @@ public class ComparisonDialog extends JDialog {
         return l;
     }
 
+    private static final DateTimeFormatter DINH_DANG_GIO = DateTimeFormatter.ofPattern("HH:mm");
+
     private JPanel taoCotLich(String tieuDe, java.util.List<ScheduleItem> danhSach) {
         JPanel cot = new JPanel();
         cot.setLayout(new BoxLayout(cot, BoxLayout.Y_AXIS));
@@ -84,9 +87,8 @@ public class ComparisonDialog extends JDialog {
         tieu.setFont(VintageTheme.FONT_NHAN);
         cot.add(tieu);
         cot.add(Box.createVerticalStrut(6));
-        for (ScheduleItem item : danhSach) {
-            JLabel dong = new JLabel(item.getGioBatDau() + "-" + item.getGioKetThuc() + "  "
-                + BieuTuongViec.cua(item) + " " + DinhDang.rutGon(item.getTen(), 20));
+
+        for (ScheduleItem item : danhSach) {JLabel dong = new JLabel(item.getGioBatDau().format(DINH_DANG_GIO) + " – " + item.getGioKetThuc().format(DINH_DANG_GIO) + "  " + BieuTuongViec.cua(item) + " " + DinhDang.rutGon(item.getTen(), 20));
             dong.setFont(VintageTheme.FONT_PHU_DE);
             dong.setForeground(VintageTheme.mauTheoUuTien(item.getDoUuTien()).darker());
             dong.setToolTipText(item.getTen());

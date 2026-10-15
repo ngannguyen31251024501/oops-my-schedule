@@ -11,6 +11,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.time.LocalTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.List;
 
@@ -111,7 +112,7 @@ public class DisruptionDialog extends JDialog {
                 super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
                 if (value instanceof ScheduleItem item) {
                     setText(BieuTuongViec.cua(item) + " " + item.getTen()
-                        + "  (" + item.getGioBatDau() + "–" + item.getGioKetThuc() + ")");
+                        + "(" + item.getGioBatDau().format(DateTimeFormatter.ofPattern("HH:mm")) + "–" + item.getGioKetThuc().format(DateTimeFormatter.ofPattern("HH:mm")) + ")");
                 }
                 return this;
             }
@@ -174,8 +175,7 @@ public class DisruptionDialog extends JDialog {
                             "Thiếu thông tin", JOptionPane.WARNING_MESSAGE);
                         return;
                     }
-                    ketQua = new SkipDisruption((ScheduleItem) comboViec.getSelectedItem());
-                    String nhap = oLyDo.getText().trim();
+                    ketQua = new SkipDisruption((ScheduleItem) comboViec.getSelectedItem());                    String nhap = oLyDo.getText().trim();
                     lyDo = nhap.isEmpty() ? null : nhap;
                 }
                 setVisible(false);
