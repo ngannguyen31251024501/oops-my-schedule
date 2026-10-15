@@ -1,5 +1,6 @@
 package com.oopsmyschedule.service;
 
+import com.oopsmyschedule.domain.DelayDisruption;
 import com.oopsmyschedule.domain.Disruption;
 import com.oopsmyschedule.domain.FixedEvent;
 import com.oopsmyschedule.domain.PriorityLevel;
@@ -10,7 +11,11 @@ import com.oopsmyschedule.domain.SkipDisruption;
 import java.time.Duration;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Khung xử lý dùng chung cho mọi {@link ReplanStrategy} cụ thể. Chứa thuật
@@ -51,21 +56,50 @@ public abstract class AbstractReplanStrategy implements ReplanStrategy {
             }
         }
 
+        // K-14: phân loại theo TRẠNG THÁI thật của từng việc, không chỉ theo giờ bắt đầu.
+        //  - Việc đã xong -> giữ nguyên (không lập lịch lại).
+        //  - Việc cố định đã kết thúc / đang diễn ra -> giữ nguyên; việc đang diễn ra
+        //    còn CHẶN thời gian tới lúc nó kết thúc (conTro) nên không việc nào bị xếp đè lên.
+        //  - Khi báo TRỄ: việc linh hoạt chưa xong mà đã tới/qua giờ = "lỡ giờ" -> được xếp lại
+        //    (mốc sớm nhất = max(giờ cũ + số phút trễ, hiện tại)), không bị bỏ quên ở quá khứ.
+        //  - Việc tương lai KHÔNG dời hàng loạt: chỉ bị đẩy khi thật sự va chạm (conTro).
+        final boolean laTre = disruption instanceof DelayDisruption;
+        final int soPhutTre = laTre ? ((DelayDisruption) disruption).getSoPhutTre() : 0;
+        Map<String, LocalTime> moc = new HashMap<>();
+        Map<String, LocalTime[]> gioBanDau = new HashMap<>();
+        for (ScheduleItem it : toanBo) {
+            gioBanDau.put(it.getId(), new LocalTime[]{it.getGioBatDau(), it.getGioKetThuc()});
+        }
+
         List<ScheduleItem> daQua = new ArrayList<>();
         List<ScheduleItem> conLai = new ArrayList<>();
+        LocalTime conTroBanDau = thoiDiemHienTai;
         for (ScheduleItem item : toanBo) {
-            if (item.getGioBatDau().isBefore(thoiDiemHienTai)) {
+            boolean daBatDau = item.getGioBatDau().isBefore(thoiDiemHienTai);
+            if (item instanceof FixedEvent) {
+                if (!item.getGioKetThuc().isAfter(thoiDiemHienTai)) {
+                    daQua.add(item); // đã kết thúc
+                } else if (daBatDau) {
+                    daQua.add(item); // đang diễn ra: giữ nguyên + chặn thời gian tới lúc kết thúc
+                    conTroBanDau = maxGio(conTroBanDau, item.getGioKetThuc());
+                } else {
+                    conLai.add(item);
+                }
+            } else if (item.isHoanThanh()) {
+                daQua.add(item);
+            } else if (laTre && !item.getGioBatDau().isAfter(thoiDiemHienTai)) {
+                // lỡ giờ (hoặc đúng giờ nhưng đang trễ): xếp lại, không âm thầm bỏ ở quá khứ
+                LocalTime somNhat = maxGio(thoiDiemHienTai, congTrongNgay(item.getGioBatDau(), soPhutTre));
+                moc.put(item.getId(), somNhat);
+                conLai.add(item);
+            } else if (daBatDau) {
                 daQua.add(item);
             } else {
                 conLai.add(item);
             }
         }
 
-        // Bước 1: phản ứng "máy móc" cấp item. SkipDisruption đã xử lý xong ở
-        // Bước 0 nên tới đây chỉ còn DelayDisruption cần áp dụng.
-        if (!(disruption instanceof SkipDisruption)) {
-            disruption.apDung(conLai);
-        }
+        // SkipDisruption đã xử lý ở Bước 0; Delay KHÔNG còn dời hàng loạt (xem K-14).
         conLai.sort((a, b) -> a.getGioBatDau().compareTo(b.getGioBatDau()));
 
         // Bước 1.5: hook cho chiến lược muốn chủ động xử lý TRƯỚC khi quét
@@ -75,7 +109,8 @@ public abstract class AbstractReplanStrategy implements ReplanStrategy {
 
         // Bước 2: quét và giải quyết xung đột theo thứ tự ưu tiên.
         List<ScheduleItem> ketQuaCuoi = new ArrayList<>();
-        LocalTime conTro = thoiDiemHienTai;
+        Set<String> daGhi = new HashSet<>();
+        LocalTime conTro = conTroBanDau;
 
         for (int i = 0; i < conLai.size(); i++) {
             ScheduleItem item = conLai.get(i);
@@ -90,9 +125,25 @@ public abstract class AbstractReplanStrategy implements ReplanStrategy {
                 continue;
             }
 
-            LocalTime gioiHanKe = timGioBatDauFixedEventTiepTheo(conLai, i);
             Duration thoiLuong = item.layThoiLuong();
-            LocalTime batDauMongMuon = maxGio(item.getGioBatDau(), conTro);
+            LocalTime batDauMongMuon = maxGio(maxGio(item.getGioBatDau(), conTro),
+                moc.getOrDefault(item.getId(), LocalTime.MIN));
+            LocalTime gioiHanKe;
+            if (moc.containsKey(item.getId())) {
+                // Việc "lỡ giờ" bị đẩy muộn: (1) luôn nhảy qua việc cố định đang chắn đúng mốc mới;
+                // (2) nếu không vừa trước việc cố định kế tiếp mà việc này KHÔNG hy sinh được thì xếp SAU
+                // việc cố định đó (không chồng giờ); còn hy sinh được thì để luồng chung xử lý (đề xuất bỏ).
+                batDauMongMuon = nhayQuaViecCoDinh(conLai, batDauMongMuon, Duration.ZERO);
+                gioiHanKe = timGioBatDauFixedEventTuGio(conLai, batDauMongMuon);
+                boolean khongVua = gioiHanKe != null
+                    && batDauMongMuon.toSecondOfDay() + thoiLuong.getSeconds() > gioiHanKe.toSecondOfDay();
+                if (khongVua && !coTheHySinh(item) && !(item instanceof RecurringEvent)) {
+                    batDauMongMuon = nhayQuaViecCoDinh(conLai, batDauMongMuon, thoiLuong);
+                    gioiHanKe = timGioBatDauFixedEventTuGio(conLai, batDauMongMuon);
+                }
+            } else {
+                gioiHanKe = timGioBatDauFixedEventTiepTheo(conLai, i);
+            }
 
             // FIX BUG cross-midnight (BR-16): không được dùng thẳng
             // batDauMongMuon.plus(thoiLuong) rồi so isAfter(CUOI_NGAY) — nếu
@@ -142,6 +193,7 @@ public abstract class AbstractReplanStrategy implements ReplanStrategy {
                 dongBoCanhBaoDeadlineNeuCan(item);
                 ketQua.themThayDoi("\"" + item.getTen() + "\": buộc phải dời tới " + batDauMongMuon
                     + " (không còn đủ chỗ lý tưởng).");
+                daGhi.add(item.getId());
                 ketQua.themCanhBao("\"" + item.getTen() + "\" (" + item.getDoUuTien()
                     + ") vẫn bị dồn ép tới " + batDauMongMuon + " — có thể ảnh hưởng việc sau hoặc giờ ngủ.");
                 conTro = ketThucMongMuon;
@@ -152,10 +204,21 @@ public abstract class AbstractReplanStrategy implements ReplanStrategy {
             if (!batDauMongMuon.equals(item.getGioBatDau())) {
                 item.ganLaiKhungGioBoiEngine(batDauMongMuon, ketThucMongMuon);
                 dongBoCanhBaoDeadlineNeuCan(item);
-                ketQua.themThayDoi("\"" + item.getTen() + "\": dời sang " + batDauMongMuon + " - " + ketThucMongMuon + ".");
+                ketQua.themThayDoi(moTaDoiGio(item, gioBanDau, batDauMongMuon, ketThucMongMuon));
+                daGhi.add(item.getId());
             }
             conTro = ketThucMongMuon;
             ketQuaCuoi.add(item);
+        }
+
+        // K-13: lưới an toàn — mọi việc ĐỔI GIỜ so với lịch ban đầu (đối chiếu theo id) đều phải
+        // có mặt trong danh sách thay đổi; việc không đổi giờ thì không tạo bản ghi giả.
+        for (ScheduleItem it : ketQuaCuoi) {
+            LocalTime[] cu = gioBanDau.get(it.getId());
+            boolean doiGio = cu != null && (!cu[0].equals(it.getGioBatDau()) || !cu[1].equals(it.getGioKetThuc()));
+            if (doiGio && !daGhi.contains(it.getId())) {
+                ketQua.themThayDoi(moTaDoiGio(it, gioBanDau, it.getGioBatDau(), it.getGioKetThuc()));
+            }
         }
 
         List<ScheduleItem> tongHop = new ArrayList<>(daQua);
@@ -201,8 +264,49 @@ public abstract class AbstractReplanStrategy implements ReplanStrategy {
         }
     }
 
+    /** Cộng phút nhưng KHÔNG cuộn vòng qua 00:00 — chạm 23:59 là dừng (để bị coi là "vượt ngày"). */
+    private static LocalTime congTrongNgay(LocalTime gio, int soPhut) {
+        long giay = gio.toSecondOfDay() + soPhut * 60L;
+        return giay >= CUOI_NGAY.toSecondOfDay() ? CUOI_NGAY : LocalTime.ofSecondOfDay(giay);
+    }
+
+    private static String moTaDoiGio(ScheduleItem item, Map<String, LocalTime[]> gioBanDau,
+                                     LocalTime moiBatDau, LocalTime moiKetThuc) {
+        LocalTime[] cu = gioBanDau.get(item.getId());
+        String tu = cu == null ? "" : " từ " + cu[0] + " - " + cu[1];
+        return "\"" + item.getTen() + "\": dời" + tu + " sang " + moiBatDau + " - " + moiKetThuc + ".";
+    }
+
     private static LocalTime maxGio(LocalTime a, LocalTime b) {
         return a.isAfter(b) ? a : b;
+    }
+
+    /** Nếu khung [bd, bd+thoiLuong) đè lên việc cố định nào thì nhảy tới lúc việc đó kết thúc (lặp tới khi hết đè). */
+    private static LocalTime nhayQuaViecCoDinh(List<ScheduleItem> danhSach, LocalTime bd, Duration thoiLuong) {
+        boolean doi = true;
+        while (doi) {
+            doi = false;
+            long ketThuc = bd.toSecondOfDay() + thoiLuong.getSeconds();
+            for (ScheduleItem f : danhSach) {
+                if (f instanceof FixedEvent && f.getGioKetThuc().isAfter(bd)
+                    && f.getGioBatDau().toSecondOfDay() < ketThuc) {
+                    bd = f.getGioKetThuc();
+                    doi = true;
+                }
+            }
+        }
+        return bd;
+    }
+
+    private static LocalTime timGioBatDauFixedEventTuGio(List<ScheduleItem> danhSach, LocalTime tuGio) {
+        LocalTime tot = null;
+        for (ScheduleItem f : danhSach) {
+            if (f instanceof FixedEvent && !f.getGioBatDau().isBefore(tuGio)
+                && (tot == null || f.getGioBatDau().isBefore(tot))) {
+                tot = f.getGioBatDau();
+            }
+        }
+        return tot;
     }
 
     private static LocalTime timGioBatDauFixedEventTiepTheo(List<ScheduleItem> danhSach, int tuIndex) {

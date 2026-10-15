@@ -136,11 +136,30 @@ public class DaySchedule {
      * tự thời gian. Trả về {@code null} nếu không có khoảng nào đủ.
      */
     public LocalTime timKhoangTrongDauTien(Duration thoiLuong) {
+        return timKhoangTrongTu(thoiLuong, LocalTime.MIDNIGHT);
+    }
+
+    /**
+     * Khe trống để CHUYỂN 1 việc sang ngày này: ưu tiên khe gần/sau giờ mong muốn (giữ đúng buổi — bữa tối
+     * không nhảy về chiều, việc học không rơi vào 2–3 giờ sáng), nếu không có mới thử từ 06:00. Không bao giờ
+     * trả về khe trước 06:00. {@code null} nếu không có chỗ.
+     */
+    public LocalTime timKhoangTrongGanGio(Duration thoiLuong, LocalTime gioMongMuon) {
+        LocalTime sang = LocalTime.of(6, 0);
+        LocalTime tu = gioMongMuon.isBefore(sang) ? sang : gioMongMuon;
+        LocalTime khe = timKhoangTrongTu(thoiLuong, tu);
+        if (khe == null && tu.isAfter(sang)) {
+            khe = timKhoangTrongTu(thoiLuong, sang);
+        }
+        return khe;
+    }
+
+    private LocalTime timKhoangTrongTu(Duration thoiLuong, LocalTime tuGio) {
         LocalTime cuoiNgay = LocalTime.of(23, 59);
         List<ScheduleItem> daSapXep = new ArrayList<>(danhSachItem);
         daSapXep.sort((a, b) -> a.getGioBatDau().compareTo(b.getGioBatDau()));
 
-        LocalTime conTro = LocalTime.MIDNIGHT;
+        LocalTime conTro = tuGio;
         for (ScheduleItem item : daSapXep) {
             if (item.getGioBatDau().isAfter(conTro)) {
                 long phutTrong = Duration.between(conTro, item.getGioBatDau()).toMinutes();
