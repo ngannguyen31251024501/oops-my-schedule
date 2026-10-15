@@ -305,10 +305,28 @@ public class DaySchedule {
         if (item instanceof FixedEvent) {
             return new FixedEvent(item.getTen(), gioBatDauMoi, gioKetThucMoi, item.getDoUuTien());
         }
+
         if (item instanceof DeadlineTask dt) {
-            return new DeadlineTask(item.getTen(), gioBatDauMoi, gioKetThucMoi,
-                item.getDoUuTien(), dt.getHanChot(), ngayMoi);
+            // Không cho phép chuyển nhiệm vụ sang ngày sau hạn chót.
+            if (ngayMoi.isAfter(dt.getHanChot().toLocalDate())) {
+                throw new IllegalArgumentException(
+                        "Không thể chuyển nhiệm vụ \"" + item.getTen()
+                                + "\" sang ngày " + ngayMoi
+                                + " vì đã quá hạn chót "
+                                + dt.getHanChot().toLocalDate()
+                );
+            }
+
+            return new DeadlineTask(
+                    item.getTen(),
+                    gioBatDauMoi,
+                    gioKetThucMoi,
+                    item.getDoUuTien(),
+                    dt.getHanChot(),
+                    ngayMoi
+            );
         }
+
         if (item instanceof RecurringEvent re) {
             return new RecurringEvent(item.getTen(), gioBatDauMoi, gioKetThucMoi,
                 item.getDoUuTien(), re.getSoNgayLienTiep());
