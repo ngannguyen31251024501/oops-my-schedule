@@ -34,6 +34,12 @@ public class DeadlineTask extends ScheduleItem {
         if (hanChot == null) {
             throw new IllegalArgumentException("Hạn chót không được null.");
         }
+        if (ngayThucHien == null) { // INV-21
+            throw new IllegalArgumentException("Ngày thực hiện không được null.");
+        }
+        if (LocalDateTime.of(ngayThucHien, gioKetThuc).isAfter(hanChot)) { // INV-06
+            throw new IllegalArgumentException("Hạn chót không được trước giờ kết thúc.");
+        }
         this.hanChot = hanChot;
         this.ngayThucHien = ngayThucHien;
     }
