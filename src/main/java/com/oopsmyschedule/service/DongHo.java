@@ -3,6 +3,7 @@ package com.oopsmyschedule.service;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
 
 /**
  * Đồng hồ của ứng dụng — có 2 chế độ:
@@ -28,13 +29,20 @@ public class DongHo {
     private LocalTime gioMoPhongGoc = LocalTime.of(7, 0);
     private Instant mocThucDat = Instant.now();
 
-    /** Giờ hiện tại theo đúng chế độ đang bật — Simulation Mode vẫn TRÔI theo thời gian thực, không đứng yên. */
+    /**
+     * Giờ hiện tại theo đúng chế độ đang bật — Simulation Mode vẫn TRÔI theo thời gian thực, không đứng yên.
+     * Luôn cắt xuống PHÚT (giây = 0, nano = 0) vì lịch chỉ tính đến phút (INV-15),
+     * tránh việc bị đặt vào giờ kiểu 15:47:51.900997800 sau khi áp dụng phương án Replan.
+     */
     public LocalTime layGioHienTai() {
+        LocalTime gio;
         if (!cheDoMoPhong) {
-            return LocalTime.now();
+            gio = LocalTime.now();
+        } else {
+            Duration daTroiQua = Duration.between(mocThucDat, Instant.now());
+            gio = gioMoPhongGoc.plus(daTroiQua);
         }
-        Duration daTroiQua = Duration.between(mocThucDat, Instant.now());
-        return gioMoPhongGoc.plus(daTroiQua);
+        return gio.truncatedTo(ChronoUnit.MINUTES);
     }
 
     public boolean isCheDoMoPhong() {
