@@ -66,7 +66,8 @@ public class DisruptionDialog extends JDialog {
         JRadioButton radioTre = new JRadioButton("Tôi đang bị trễ", true);
         JPanel theTre = taoTheLuaChon(radioTre, "Lịch hiện tại bị chậm so với kế hoạch");
 
-        JSpinner spinnerPhut = new JSpinner(new SpinnerNumberModel(soPhutGoiY != null ? soPhutGoiY : 30, 1, 600, 5));
+        int goiY = soPhutGoiY != null ? Math.min(soPhutGoiY, 1440) : 30;
+        JSpinner spinnerPhut = new JSpinner(new SpinnerNumberModel(goiY, 1, 1440, 5));
         JPanel formTre = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 4));
         formTre.setOpaque(false);
         formTre.setBorder(BorderFactory.createEmptyBorder(2, 6, 8, 0));
@@ -107,11 +108,11 @@ public class DisruptionDialog extends JDialog {
         comboViec.setRenderer(new DefaultListCellRenderer() {
             @Override
             public Component getListCellRendererComponent(JList<?> list, Object value, int index,
-                    boolean isSelected, boolean cellHasFocus) {
+                                                          boolean isSelected, boolean cellHasFocus) {
                 super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
                 if (value instanceof ScheduleItem item) {
                     setText(BieuTuongViec.cua(item) + " " + item.getTen()
-                        + "  (" + item.getGioBatDau() + "–" + item.getGioKetThuc() + ")");
+                            + "  (" + DinhDang.gio(item.getGioBatDau()) + "–" + DinhDang.gio(item.getGioKetThuc()) + ")");
                 }
                 return this;
             }
@@ -164,14 +165,14 @@ public class DisruptionDialog extends JDialog {
                     String ten = oTen.getText().trim();
                     if (ten.isEmpty()) {
                         JOptionPane.showMessageDialog(this, "Bạn chưa nhập tên việc phát sinh.",
-                            "Thiếu thông tin", JOptionPane.WARNING_MESSAGE);
+                                "Thiếu thông tin", JOptionPane.WARNING_MESSAGE);
                         return;
                     }
                     viecPhatSinh = new FixedEvent(ten, layGio(oGioBatDau), layGio(oGioKetThuc), PriorityLevel.BAT_BUOC);
                 } else if (radioKhongTheLam.isSelected()) {
                     if (comboViec.getSelectedItem() == null) {
                         JOptionPane.showMessageDialog(this, "Không có việc nào để chọn.",
-                            "Thiếu thông tin", JOptionPane.WARNING_MESSAGE);
+                                "Thiếu thông tin", JOptionPane.WARNING_MESSAGE);
                         return;
                     }
                     ketQua = new SkipDisruption((ScheduleItem) comboViec.getSelectedItem());
@@ -197,7 +198,9 @@ public class DisruptionDialog extends JDialog {
         setLocationRelativeTo(parent);
     }
 
-    /** 1 "thẻ" lựa chọn: radio button ở trên + mô tả xám nhỏ bên dưới, giống đúng mockup đã bàn. */
+    /**
+     * 1 "thẻ" lựa chọn: radio button ở trên + mô tả xám nhỏ bên dưới, giống đúng mockup đã bàn.
+     */
     private JPanel taoTheLuaChon(JRadioButton radio, String moTa) {
         RoundedPanel the = new RoundedPanel(10);
         the.setBackground(VintageTheme.NEN_THE);
@@ -244,17 +247,23 @@ public class DisruptionDialog extends JDialog {
         return d.toInstant().atZone(ZoneId.systemDefault()).toLocalTime().withSecond(0).withNano(0);
     }
 
-    /** Trả về sự cố (Trễ / Không thể làm 1 việc), hoặc null nếu chọn "Có việc phát sinh" hoặc bấm Đóng. */
+    /**
+     * Trả về sự cố (Trễ / Không thể làm 1 việc), hoặc null nếu chọn "Có việc phát sinh" hoặc bấm Đóng.
+     */
     public Disruption layKetQua() {
         return ketQua;
     }
 
-    /** Lý do không bắt buộc khi chọn "Tôi không thể làm một việc" — null nếu không nhập hoặc không áp dụng. */
+    /**
+     * Lý do không bắt buộc khi chọn "Tôi không thể làm một việc" — null nếu không nhập hoặc không áp dụng.
+     */
     public String layLyDo() {
         return lyDo;
     }
 
-    /** Việc mới khi chọn "Có việc phát sinh" — null nếu không phải lựa chọn này hoặc bấm Đóng. */
+    /**
+     * Việc mới khi chọn "Có việc phát sinh" — null nếu không phải lựa chọn này hoặc bấm Đóng.
+     */
     public ScheduleItem layViecPhatSinh() {
         return viecPhatSinh;
     }

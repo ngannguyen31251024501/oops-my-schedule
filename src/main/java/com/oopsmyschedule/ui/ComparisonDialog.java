@@ -5,8 +5,11 @@ import com.oopsmyschedule.service.KetQuaSoSanh;
 
 import javax.swing.*;
 import java.awt.*;
+import java.time.format.DateTimeFormatter;
 
-/** Dialog "So sánh lịch trình" — hiển thị trước/sau, danh sách thay đổi, cảnh báo. */
+/**
+ * Dialog "So sánh lịch trình" — hiển thị trước/sau, danh sách thay đổi, cảnh báo.
+ */
 public class ComparisonDialog extends JDialog {
 
     private boolean daXacNhan = false;
@@ -54,8 +57,14 @@ public class ComparisonDialog extends JDialog {
 
         NutTron xacNhan = new NutTron("✅ Xác nhận áp dụng", NutTron.Kieu.CHINH, VintageTheme.XANH_DUONG);
         NutTron chinhSua = new NutTron("Chỉnh sửa lại");
-        xacNhan.addActionListener(e -> { daXacNhan = true; setVisible(false); });
-        chinhSua.addActionListener(e -> { daXacNhan = false; setVisible(false); });
+        xacNhan.addActionListener(e -> {
+            daXacNhan = true;
+            setVisible(false);
+        });
+        chinhSua.addActionListener(e -> {
+            daXacNhan = false;
+            setVisible(false);
+        });
 
         JPanel duoi = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         duoi.setBackground(VintageTheme.NEN_CHINH);
@@ -73,20 +82,22 @@ public class ComparisonDialog extends JDialog {
         return l;
     }
 
+    private static final DateTimeFormatter DINH_DANG_GIO = DateTimeFormatter.ofPattern("HH:mm");
+
     private JPanel taoCotLich(String tieuDe, java.util.List<ScheduleItem> danhSach) {
         JPanel cot = new JPanel();
         cot.setLayout(new BoxLayout(cot, BoxLayout.Y_AXIS));
         cot.setBackground(VintageTheme.NEN_THE);
         cot.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(VintageTheme.VIEN),
-            BorderFactory.createEmptyBorder(8, 10, 8, 10)));
+                BorderFactory.createLineBorder(VintageTheme.VIEN),
+                BorderFactory.createEmptyBorder(8, 10, 8, 10)));
         JLabel tieu = new JLabel(tieuDe);
         tieu.setFont(VintageTheme.FONT_NHAN);
         cot.add(tieu);
         cot.add(Box.createVerticalStrut(6));
+
         for (ScheduleItem item : danhSach) {
-            JLabel dong = new JLabel(item.getGioBatDau() + "-" + item.getGioKetThuc() + "  "
-                + BieuTuongViec.cua(item) + " " + DinhDang.rutGon(item.getTen(), 20));
+            JLabel dong = new JLabel(item.getGioBatDau().format(DINH_DANG_GIO) + " – " + item.getGioKetThuc().format(DINH_DANG_GIO) + "  " + BieuTuongViec.cua(item) + " " + DinhDang.rutGon(item.getTen(), 20));
             dong.setFont(VintageTheme.FONT_PHU_DE);
             dong.setForeground(VintageTheme.mauTheoUuTien(item.getDoUuTien()).darker());
             dong.setToolTipText(item.getTen());

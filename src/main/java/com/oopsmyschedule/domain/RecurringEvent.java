@@ -14,14 +14,14 @@ public class RecurringEvent extends ScheduleItem {
     private boolean boQuaHomNay = false;
 
     public RecurringEvent(String ten, LocalTime gioBatDau, LocalTime gioKetThuc,
-                           PriorityLevel doUuTien, int soNgayLienTiep) {
+                          PriorityLevel doUuTien, int soNgayLienTiep) {
         super(ten, gioBatDau, gioKetThuc, doUuTien);
         this.soNgayLienTiep = soNgayLienTiep;
     }
 
     /** Copy constructor giữ nguyên id + trạng thái (xem javadoc ở ScheduleItem). */
     public RecurringEvent(String id, String ten, LocalTime gioBatDau, LocalTime gioKetThuc,
-                           PriorityLevel doUuTien, boolean hoanThanh, int soNgayLienTiep, boolean boQuaHomNay) {
+                          PriorityLevel doUuTien, boolean hoanThanh, int soNgayLienTiep, boolean boQuaHomNay) {
         super(id, ten, gioBatDau, gioKetThuc, doUuTien, hoanThanh);
         this.soNgayLienTiep = soNgayLienTiep;
         this.boQuaHomNay = boQuaHomNay;
@@ -31,11 +31,15 @@ public class RecurringEvent extends ScheduleItem {
     public boolean coTheDoiLich() {
         // Recurring event chấp nhận bị dời nhẹ trong ngày; nếu không đủ chỗ
         // thì ReplanEngine sẽ gọi boQuaHomNay() thay vì ép dời (xem xuLyKhiBiTre).
-        return true;
+        return !boQuaHomNay; // INV-19
     }
 
     @Override
     public void xuLyKhiBiTre(int soPhutTre) {
+        if (boQuaHomNay) { // INV-19
+            throw new IllegalStateException(
+                    "Việc lặp \"" + getTen() + "\" đã bỏ qua hôm nay, không dời tiếp.");
+        }
         doiLich(soPhutTre);
     }
 

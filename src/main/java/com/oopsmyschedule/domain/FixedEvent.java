@@ -9,13 +9,28 @@ import java.time.LocalTime;
 public class FixedEvent extends ScheduleItem {
 
     public FixedEvent(String ten, LocalTime gioBatDau, LocalTime gioKetThuc, PriorityLevel doUuTien) {
-        super(ten, gioBatDau, gioKetThuc, doUuTien);
+        super(ten, gioBatDau, gioKetThuc, PriorityLevel.BAT_BUOC); // INV-17: luôn BẮT BUỘC
     }
 
     /** Copy constructor giữ nguyên id + trạng thái hoàn thành (xem javadoc ở ScheduleItem). */
     public FixedEvent(String id, String ten, LocalTime gioBatDau, LocalTime gioKetThuc,
-                       PriorityLevel doUuTien, boolean hoanThanh) {
-        super(id, ten, gioBatDau, gioKetThuc, doUuTien, hoanThanh);
+                      PriorityLevel doUuTien, boolean hoanThanh) {
+        super(id, ten, gioBatDau, gioKetThuc, PriorityLevel.BAT_BUOC, hoanThanh); // INV-17
+    }
+
+    /** INV-17: FixedEvent luôn BAT_BUOC, không cho đổi sang mức khác. */
+    @Override
+    public void setDoUuTien(PriorityLevel doUuTien) {
+        if (doUuTien != PriorityLevel.BAT_BUOC) {
+            throw new IllegalArgumentException("Việc cố định luôn ở mức BẮT BUỘC.");
+        }
+        super.setDoUuTien(doUuTien);
+    }
+
+    /** INV-20: ReplanEngine cũng không được ép đổi giờ việc cố định (đi qua ganLaiKhungGioBoiEngine). */
+    @Override
+    protected void datLaiKhungGio(LocalTime moiBatDau, LocalTime moiKetThuc) {
+        throw new IllegalStateException("Không thể đặt lại giờ cho việc cố định \"" + getTen() + "\".");
     }
 
     @Override
@@ -29,7 +44,7 @@ public class FixedEvent extends ScheduleItem {
         // người gọi (ReplanEngine/Disruption phải kiểm tra coTheDoiLich()
         // trước). Ném lỗi ở đây để bắt lỗi sớm thay vì âm thầm sai dữ liệu.
         throw new IllegalStateException(
-            "Không thể dời lịch cho việc cố định \"" + getTen() + "\" — hãy kiểm tra coTheDoiLich() trước khi gọi.");
+                "Không thể dời lịch cho việc cố định \"" + getTen() + "\" — hãy kiểm tra coTheDoiLich() trước khi gọi.");
     }
 
     @Override

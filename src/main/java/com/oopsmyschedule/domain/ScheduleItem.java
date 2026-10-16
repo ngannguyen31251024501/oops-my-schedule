@@ -88,24 +88,54 @@ public abstract class ScheduleItem {
      * khoảng thời lượng (duration). Dùng chung cho các lớp con "linh hoạt".
      */
     protected void doiLich(int soPhut) {
-        if (!doiDuocTrongNgay(soPhut)) {
-            throw new IllegalArgumentException("Dời " + soPhut + " phút sẽ vượt qua nửa đêm — không cuộn vòng sang 00:00.");
+        kiemTraChuaHoanThanh("dời lịch"); // INV-18
+        // INV-03: guard TRƯỚC khi đổi bất kỳ field nào, để object không bị đổi nửa chừng.
+        if (vuotNuaDemNeuDoi(soPhut)) {
+            throw new IllegalArgumentException(
+                "Dời " + soPhut + " phút sẽ làm giờ kết thúc (" + gioKetThuc + ") vượt 23:59.");
         }
         this.gioBatDau = this.gioBatDau.plusMinutes(soPhut);
         this.gioKetThuc = this.gioKetThuc.plusMinutes(soPhut);
     }
 
-    /** Dời {@code soPhut} phút có còn nằm trong ngày (không cuộn vòng qua 00:00) không? */
+    /** Mốc cuối ngày hợp lệ (23:59) tính bằng giây: 86340. */
+    private static final long CUOI_NGAY_GIAY = LocalTime.of(23, 59).toSecondOfDay();
+
+    /**
+     * Dời {@code soPhut} phút có làm giờ kết thúc vượt 23:59 không? Tính bằng giây
+     * tuyệt đối vì {@code LocalTime.plusMinutes} cuộn vòng qua nửa đêm. Kết thúc
+     * đúng 23:59 vẫn hợp lệ. Chỉ đọc, không đổi trạng thái.
+     */
+    public boolean vuotNuaDemNeuDoi(int soPhut) {
+        return gioKetThuc.toSecondOfDay() + soPhut * 60L > CUOI_NGAY_GIAY;
+    }
+
+    /**
+     * Giữ lại từ main (K-14): dời {@code soPhut} phút có còn nằm trong ngày (không cuộn
+     * vòng qua 00:00) không? Với soPhut >= 0 tương đương {@code !vuotNuaDemNeuDoi(soPhut)}.
+     */
     public boolean doiDuocTrongNgay(int soPhut) {
         long batDau = gioBatDau.toSecondOfDay() + soPhut * 60L;
         long ketThuc = gioKetThuc.toSecondOfDay() + soPhut * 60L;
         return batDau >= 0 && ketThuc <= 24 * 3600L - 60;
     }
 
+    /** INV-18: việc đã hoàn thành không bị dời / đặt lại giờ. */
+    private void kiemTraChuaHoanThanh(String hanhDong) {
+        if (hoanThanh) {
+            throw new IllegalStateException(
+                "Việc \"" + ten + "\" đã hoàn thành, không thể " + hanhDong + ".");
+        }
+    }
+
     /** Đặt lại khung giờ tuyệt đối (dùng khi ReplanEngine cần "ép" 1 vị trí mới cụ thể). */
     protected void datLaiKhungGio(LocalTime moiBatDau, LocalTime moiKetThuc) {
+        kiemTraChuaHoanThanh("đặt lại khung giờ"); // INV-18
         if (!moiBatDau.isBefore(moiKetThuc)) {
             throw new IllegalArgumentException("Khung giờ mới không hợp lệ: " + moiBatDau + " - " + moiKetThuc);
+        }
+        if (!Duration.between(moiBatDau, moiKetThuc).equals(layThoiLuong())) { // INV-08
+            throw new IllegalArgumentException("Không được thay đổi thời lượng của việc.");
         }
         this.gioBatDau = moiBatDau;
         this.gioKetThuc = moiKetThuc;
