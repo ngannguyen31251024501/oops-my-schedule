@@ -34,7 +34,7 @@ public class ReplanEngine {
      * đổi, cảnh báo) chứ không chỉ là 1 hành động lẻ.
      */
     public List<PhuongAn> taoCacPhuongAn(DaySchedule ds, Disruption disruption, LocalTime thoiDiemHienTai) {
-        // BR-11/BR-12: reject sớm thay vì để NullPointerException mù mờ nổ ra
+        // BR-11/BR-12: reject sớm thay vì để NullPointerException mù mờ nổ
         // giữa chừng thuật toán quét xung đột (khó truy vết).
         if (ds == null) throw new IllegalArgumentException("DaySchedule không được null.");
         if (disruption == null) throw new IllegalArgumentException("Disruption không được null.");
