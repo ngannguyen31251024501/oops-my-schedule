@@ -604,7 +604,7 @@ class KiemThuJUnitTest {
         boolean engineRejectNull = false;
         try {
             new ReplanEngine().taoCacPhuongAn(null, new DelayDisruption(5), LocalTime.now());
-        } catch (NullPointerException e) {
+        } catch (IllegalArgumentException e) {
             engineRejectNull = true;
         } catch (Exception e) {
             // sai loại exception
@@ -620,8 +620,8 @@ class KiemThuJUnitTest {
         }
 
         ok("VAL-14", skipRejectNull && engineRejectNull && dsRejectNull,
-            "SkipDisruption(null)/ReplanEngine.taoCacPhuongAn(null,...)/new DaySchedule(null) đều phải ném "
-            + "NullPointerException ngay lập tức, không được âm thầm bỏ qua. skip=" + skipRejectNull
+            "SkipDisruption(null)/new DaySchedule(null) ném NullPointerException, "
+            + "ReplanEngine.taoCacPhuongAn(null,...) ném IllegalArgumentException ngay lập tức, không được âm thầm bỏ qua. skip=" + skipRejectNull
             + ", engine=" + engineRejectNull + ", ds=" + dsRejectNull);
     }
 
