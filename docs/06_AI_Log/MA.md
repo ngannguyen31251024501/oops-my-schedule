@@ -32,8 +32,6 @@
 
 ## Nhật ký
 
-## Nhật ký
-
 ### AI-MA-01 · [13/10] · MA01 · ChatGPT
 
 **Prompt (nguyên văn):**
