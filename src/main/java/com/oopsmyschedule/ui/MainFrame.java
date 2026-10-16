@@ -2,6 +2,8 @@ package com.oopsmyschedule.ui;
 
 import com.oopsmyschedule.domain.Disruption;
 import com.oopsmyschedule.domain.ScheduleItem;
+import com.oopsmyschedule.controller.ReplanController;
+import com.oopsmyschedule.controller.ScheduleController;
 import com.oopsmyschedule.service.*;
 
 import javax.swing.*;
@@ -75,10 +77,15 @@ public class MainFrame extends JFrame {
 
     // Ghi nhớ đã nhắc "item::mứcđộ" nào rồi, tránh popup lặp lại mỗi giây.
     private final Set<String> daNhac = new HashSet<>();
+    // Việc người dùng bấm "Bỏ qua" ở banner nhắc: chỉ ẩn nhắc, KHÔNG đánh dấu hoàn thành (K-04).
+    private final Set<String> idBoQua = new HashSet<>();
+    private final ScheduleController scheduleController = new ScheduleController(this::layHoacTaoLich);
+    private final ReplanController replanController;
 
     public MainFrame(DaySchedule ds) {
         super("Oops! My Schedule 😭");
         this.ds = ds;
+        this.replanController = new ReplanController(engine, this::layHoacTaoLich);
         this.theoNgay.put(ds.getNgay(), ds);
         this.ngayDangXem = ds.getNgay();
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -357,14 +364,15 @@ public class MainFrame extends JFrame {
             if (moi != null) {
                 LocalDate ngayDich = dlg.layNgayDaChon();
                 try {
-                    layHoacTaoLich(ngayDich).themItem(moi);
+                    scheduleController.themViec(moi, ngayDich);
                     lamMoiTatCa();
                     capNhatTimelineChoNgayDangXem();
                     String moTa = "\"" + moi.getTen() + "\" · " + moi.getGioBatDau()
                         + (ngayDich.equals(ngayDangXem) ? "" : " · ngày " + ngayDich);
                     trungTamThongBao.them("✅ Đã thêm 1 việc: " + moTa, dongHo.layGioHienTai());
                     Toast.thanhCong(this, "Đã thêm 1 việc", moTa);
-                } catch (IllegalArgumentException ex) {
+                }
+                catch (IllegalArgumentException | IllegalStateException ex) {
                     Toast.loi(this, "Không thể thêm việc", ex.getMessage());
                 }
             }
@@ -401,12 +409,17 @@ public class MainFrame extends JFrame {
             capNhatTimelineChoNgayDangXem();
         }
     }
-
+    /** Quét cảnh báo như main (quetChoNguoiDung), rồi bỏ những việc người dùng đã bấm "Bỏ qua". */
+    private List<CanhBaoViec> quetCanhBao(LocalTime hienTai) {
+        return BoTheoDoiLich.quetChoNguoiDung(ds, hienTai).stream()
+                .filter(c -> !idBoQua.contains(c.getItem().getId()))
+                .toList();
+    }
     /** Làm mới Trang chủ + huy hiệu số thông báo — KHÔNG đụng tới tab "Xem cả ngày" (xem {@link #capNhatTimelineChoNgayDangXem}). */
     private void lamMoiTatCa() {
         LocalTime hienTai = dongHo.layGioHienTai();
 
-        List<CanhBaoViec> canhBaoList = BoTheoDoiLich.quet(ds, hienTai);
+        List<CanhBaoViec> canhBaoList = quetCanhBao(hienTai);
         List<ScheduleItem> sapToi = ds.layLichHienTai().stream()
             .filter(it -> !it.isHoanThanh() && it.getGioBatDau().isAfter(hienTai))
             .sorted(Comparator.comparing(ScheduleItem::getGioBatDau))
@@ -426,15 +439,12 @@ public class MainFrame extends JFrame {
      * @param buocXemNgay nếu true (do bấm nút tua nhanh) thì hiện kể cả đã nhắc rồi ở tầng thấp hơn trước đó trong cùng tick.
      */
     private void kiemTraCanhBao(boolean buocXemNgay) {
-        List<CanhBaoViec> canhBaoList = BoTheoDoiLich.quet(ds, dongHo.layGioHienTai());
+        List<CanhBaoViec> canhBaoList = quetCanhBao(dongHo.layGioHienTai());
         if (canhBaoList.isEmpty()) {
             mascotPanel.capNhat(MascotArt.BieuCam.BINH_THUONG, "Lịch hôm nay ổn áp, cứ thế mà làm nha! 🐾");
             return;
         }
-        CanhBaoViec nangNhat = canhBaoList.get(0);
-        for (CanhBaoViec c : canhBaoList) {
-            if (c.getMucDo().ordinal() > nangNhat.getMucDo().ordinal()) nangNhat = c;
-        }
+        CanhBaoViec nangNhat = BoTheoDoiLich.chonCanhBaoChinh(canhBaoList);
         capNhatMascotTheoMucDo(nangNhat);
 
         String khoa = nangNhat.getItem().getId() + "::" + nangNhat.getMucDo();
@@ -471,8 +481,8 @@ public class MainFrame extends JFrame {
      */
     private void xuLyViecPhatSinh(ScheduleItem viecMoi) {
         try {
-            ds.themItem(viecMoi);
-        } catch (IllegalArgumentException ex) {
+            scheduleController.themViec(viecMoi, ds.getNgay());
+        } catch (IllegalArgumentException | IllegalStateException ex) {
             Toast.loi(this, "Không thể thêm việc phát sinh", ex.getMessage());
             return;
         }
@@ -508,11 +518,11 @@ public class MainFrame extends JFrame {
         Object[] lua = {"Bắt đầu", "Bỏ qua", "Tôi đang trễ"};
         int chon = JOptionPane.showOptionDialog(this, noiDung, "Nhắc lịch",
             JOptionPane.DEFAULT_OPTION, JOptionPane.WARNING_MESSAGE, null, lua, lua[2]);
-        if (chon == 1) { // Bỏ qua
-            c.getItem().danhDauHoanThanh();
+        if (chon == 1) { // Bỏ qua: chỉ ẩn nhắc cho việc này, KHÔNG đánh dấu hoàn thành
+            idBoQua.add(c.getItem().getId());
             lamMoiTatCa();
         } else if (chon == 2) { // Tôi đang trễ -> mở dialog báo sự cố, gợi ý sẵn số phút
-            moDialogBaoSuCo((int) c.getSoPhutTre());
+            moDialogBaoSuCo(Math.min((int) c.getSoPhutTre(), 1440));
         }
         // chọn "Bắt đầu" thì chỉ đóng banner, không làm gì thêm (người dùng tự biết đang làm).
     }
@@ -539,8 +549,7 @@ public class MainFrame extends JFrame {
         // Không còn tính 1 "phương án tối ưu" duy nhất: chạy cả 3 chiến lược
         // rule-based (Ít thay đổi / Ưu tiên deadline / Giảm tải) rồi để người
         // dùng tự so sánh & chọn — xem ReplanEngine#taoCacPhuongAn.
-        List<PhuongAn> cacPhuongAn = engine.taoCacPhuongAn(ds, disruption, dongHo.layGioHienTai());
-
+        List<PhuongAn> cacPhuongAn = replanController.taoPhuongAn(ds, disruption, dongHo.layGioHienTai());
         // Phân loại nhanh các việc CÒN LẠI trong ngày (chưa xong, chưa tới giờ)
         // thành 3 nhóm để báo mức độ ảnh hưởng thật ("khóa cứng" / "có thể dời"
         // / "có thể hy sinh") trước khi đưa ra 3 phương án — đúng tinh thần
@@ -573,41 +582,22 @@ public class MainFrame extends JFrame {
         // thẻ phương án qua "Xem thay đổi ▾", không cần 1 bước riêng nữa.
         PhuongAn daChon = canhBao.getPhuongAnDaChon();
         KetQuaSoSanh ketQua = daChon.getKetQua();
-        ds.thayTheToanBo(ketQua.getLichSau().layLichHienTai());
-
-        // "Đề xuất bỏ" không có nghĩa là biến mất hoàn toàn: cố gắng chuyển
-        // từng việc đó sang lịch NGÀY MAI (best-effort) thay vì tự ý xóa hẳn —
-        // người dùng vẫn giữ được việc đó, chỉ là không làm hôm nay nữa.
-        int soChuyenNgayMai = 0;
-        int soKhongTheSapXep = 0;
-        List<String> tenKhongTheSapXep = new java.util.ArrayList<>();
-        LocalDate ngayMai = ds.getNgay().plusDays(1);
-        DaySchedule lichNgayMai = layHoacTaoLich(ngayMai);
-        for (ScheduleItem bi : ketQua.getDanhSachDeXuatBo()) {
-            // FIX: dò khe hở LIÊN TỤC thật sự bằng timKhoangTrongDauTien thay
-            // vì chỉ hỏi "có slot nào không" (coDuCho) rồi vẫn nhét vào giờ
-            // CŨ của task — giờ cũ có thể đã bị chiếm bởi việc khác dù ngày
-            // mai vẫn còn khe trống ở chỗ khác (xem DaySchedule#timKhoangTrongDauTien).
-            LocalTime slotTrong = lichNgayMai.timKhoangTrongDauTien(bi.layThoiLuong());
-            if (slotTrong == null) {
-                soKhongTheSapXep++;
-                tenKhongTheSapXep.add(bi.getTen());
-                continue;
-            }
-            try {
-                lichNgayMai.themItem(DaySchedule.taoBanSaoSangNgayKhac(bi, ngayMai, slotTrong));
-                soChuyenNgayMai++;
-            } catch (IllegalArgumentException ex) {
-                soKhongTheSapXep++; // trùng giờ cố định ở ngày mai luôn -> đành chịu, không ép được
-                tenKhongTheSapXep.add(bi.getTen());
-            }
+        KetQuaApDung ketQuaApDung;
+        try {
+            ketQuaApDung = replanController.apDungPhuongAn(daChon, ds, dongHo.layGioHienTai(), tieuDe);
+        } catch (IOException | IllegalArgumentException | IllegalStateException ex) {
+            JOptionPane.showMessageDialog(this,
+                    "Không thể lưu lịch sau khi áp dụng phương án: " + ex.getMessage(),
+                    "Lỗi lưu lịch", JOptionPane.ERROR_MESSAGE);
+            return;
         }
+        int soChuyenNgayMai = ketQuaApDung.getChuyenNgayMai().size();
+        List<String> tenKhongTheSapXep = ketQuaApDung.getChuaXepLich().stream()
+                .map(ScheduleItem::getTen).toList();
+        int soKhongTheSapXep = tenKhongTheSapXep.size();
 
         daNhac.clear();
         mascotPanel.capNhat(MascotArt.BieuCam.VUI, "Lịch mới đã được áp dụng! Cố lên nha bạn ơi 💪");
-
-        ds.ghiNhatKySuCo(new SuCoNhatKy(dongHo.layGioHienTai(), tieuDe, daChon.getTen(),
-            ketQua.getDanhSachThayDoi(), tenKhongTheSapXep));
 
         int soDaDieuChinh = (int) ketQua.getDanhSachThayDoi().stream()
             .filter(s -> !s.startsWith("Không có việc nào")).count();
@@ -627,6 +617,7 @@ public class MainFrame extends JFrame {
         lamMoiTatCa();
     }
 
+
     /**
      * Mở dialog sửa 1 việc đã có trong ngày đang xem. Dialog cho chọn lại
      * ngày áp dụng — nếu người dùng đổi sang ngày khác, item sẽ được CHUYỂN
@@ -640,17 +631,14 @@ public class MainFrame extends JFrame {
         if (daSua == null) return;
         LocalDate ngayMoi = dlg.layNgayDaChon();
         try {
-            layHoacTaoLich(ngayDangXem).xoaItem(item);
-            layHoacTaoLich(ngayMoi).themItem(daSua);
+            scheduleController.suaViec(item, ngayDangXem, daSua, ngayMoi);
             lamMoiTatCa();
             capNhatTimelineChoNgayDangXem();
             String moTa = "\"" + daSua.getTen() + "\" → " + daSua.getGioBatDau() + "-" + daSua.getGioKetThuc()
-                + (ngayMoi.equals(ngayDangXem) ? "" : " · chuyển sang ngày " + ngayMoi);
+                    + (ngayMoi.equals(ngayDangXem) ? "" : " · chuyển sang ngày " + ngayMoi);
             trungTamThongBao.them("✅ Đã cập nhật lịch: " + moTa, dongHo.layGioHienTai());
             Toast.thanhCong(this, "Đã cập nhật lịch", moTa);
-        } catch (IllegalArgumentException ex) {
-            // Lưu lại thất bại (VD: trùng giờ với việc Cố định khác) -> khôi phục item cũ, báo lỗi.
-            layHoacTaoLich(ngayDangXem).themItem(item);
+        } catch (IllegalArgumentException | IllegalStateException ex) {
             capNhatTimelineChoNgayDangXem();
             Toast.loi(this, "Không thể lưu thay đổi", ex.getMessage());
         }
@@ -660,8 +648,6 @@ public class MainFrame extends JFrame {
      * "🗑️ Xóa" trên 1 thẻ việc ở tab "Xem cả ngày" — luôn hỏi xác nhận trước
      * (thao tác không thể hoàn tác) rồi mới xóa thật khỏi {@code DaySchedule}
      * của NGÀY ĐANG XEM (không phải lúc nào cũng là hôm nay). Dùng
-     * {@link DaySchedule#huyItem} (không phải {@code xoaItem}) để "Tổng kết
-     * ngày" đếm đúng số việc đã hủy.
      */
     private void xoaViecDangXem(ScheduleItem item) {
         int xacNhan = JOptionPane.showConfirmDialog(this,
@@ -670,7 +656,7 @@ public class MainFrame extends JFrame {
             "Xác nhận xóa/hủy hoạt động", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
         if (xacNhan != JOptionPane.YES_OPTION) return;
 
-        boolean daXoa = layHoacTaoLich(ngayDangXem).huyItem(item);
+        boolean daXoa = scheduleController.xoaViec(item, ngayDangXem);
         if (!daXoa) return;
         daNhac.remove(item.getId() + "::" + com.oopsmyschedule.service.MucDoCanhBao.TRE_NHE);
         daNhac.remove(item.getId() + "::" + com.oopsmyschedule.service.MucDoCanhBao.TRE_NANG);
