@@ -24,8 +24,11 @@ public class ReplanApplyService {
         List<ScheduleItem> chuaXepLich = new ArrayList<>();
 
         for (ScheduleItem bi : ketQua.getDanhSachDeXuatBo()) {
-            // TODO K-08: đổi sang timKhoangTrongDauTien(bi.layThoiLuong(), LocalTime.of(6, 0)) khi Manh push
             LocalTime slot = ngayMai.timKhoangTrongDauTien(bi.layThoiLuong());
+            if (slot != null && slot.isBefore(LocalTime.of(6, 0))) {
+                slot = null; // chưa có bản dò từ 06:00 của Manh: coi như không có khe hợp lệ
+            }
+
             if (slot == null) {
                 chuaXepLich.add(bi);
                 continue;

@@ -90,7 +90,7 @@ class ReplanApplyServiceTest {
     }
 
     @Test
-    void ngayMaiKin_viecVaoChuaXepLich_khongMat() {
+    void k07_ngayMaiKin_viecNamTrongChuaXepLichCuaHomNay() {
         FlexibleTask bi = viecBiBo();
         DaySchedule homNay = lichHomNay(bi);
         DaySchedule ngayMai = new DaySchedule(NGAY_MAI);
@@ -98,11 +98,25 @@ class ReplanApplyServiceTest {
 
         KetQuaApDung kq = service.apDung(homNay, ngayMai, taoPhuongAn(homNay, bi));
 
-        // BR-02 (tạm): không chuyển được thì vào chuaXepLich, không biến mất
         assertTrue(kq.getChuyenNgayMai().isEmpty());
         assertEquals(1, kq.getChuaXepLich().size());
-        assertSame(bi, kq.getChuaXepLich().get(0));
-        // ngày mai không bị nhét thêm (không chồng giờ)
-        assertEquals(1, ngayMai.layLichHienTai().size());
+        // K-07: việc phải còn được lưu ở hôm nay, không biến mất khỏi cả hai ngày
+        assertTrue(homNay.getChuaXepLich().stream()
+                        .anyMatch(i -> i.getTen().equals("Doc sach")),
+                "Việc không chuyển được phải nằm trong chuaXepLich của hôm nay");
+        assertEquals(1, ngayMai.layLichHienTai().size()); // ngày mai không bị nhét thêm
+    }
+    @Test
+    void k08_ngayMaiTrong_viecKhongBiXepTruoc6h() {
+        FlexibleTask bi = viecBiBo();
+        DaySchedule homNay = lichHomNay(bi);
+        DaySchedule ngayMai = new DaySchedule(NGAY_MAI);
+
+        KetQuaApDung kq = service.apDung(homNay, ngayMai, taoPhuongAn(homNay, bi));
+
+        assertEquals(1, kq.getChuyenNgayMai().size());
+        ScheduleItem daChuyen = timTheoTen(ngayMai, "Doc sach");
+        assertNotNull(daChuyen);
+        assertEquals(LocalTime.of(6, 0), daChuyen.getGioBatDau());
     }
 }
