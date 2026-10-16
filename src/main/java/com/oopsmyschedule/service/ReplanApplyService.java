@@ -24,7 +24,6 @@ public class ReplanApplyService {
         List<ScheduleItem> chuaXepLich = new ArrayList<>();
 
         for (ScheduleItem bi : ketQua.getDanhSachDeXuatBo()) {
-            // TODO K-08: đổi sang timKhoangTrongDauTien(bi.layThoiLuong(), LocalTime.of(6, 0)) khi Manh push
             LocalTime slot = ngayMai.timKhoangTrongDauTien(bi.layThoiLuong());
             if (slot == null) {
                 chuaXepLich.add(bi);
@@ -37,7 +36,6 @@ public class ReplanApplyService {
                 chuaXepLich.add(bi);
             }
         }
-        // TODO K-07: khi Manh có chuaXepLich trong DaySchedule: homNay.themChuaXepLich(bi) cho từng việc
         return new KetQuaApDung(chuyenNgayMai, chuaXepLich);
     }
 }
