@@ -25,7 +25,7 @@ class ReplanEngineTest {
         ds.themItem(dangLam);
 
         List<PhuongAn> kq = new ReplanEngine()
-                .taoCacPhuongAn(ds, new DelayDisruption(90), LocalTime.of(12, 0)); // SỬA nếu constructor khác
+                .taoCacPhuongAn(ds, new DelayDisruption(90), LocalTime.of(12, 0));
 
         for (PhuongAn p : kq) {
             ScheduleItem x = p.getKetQua().getLichSau().layLichHienTai().stream()
@@ -50,7 +50,7 @@ class ReplanEngineTest {
     void t10_viecBatDauDungGioHienTai_biDoi() {
         DaySchedule ds = new DaySchedule(LocalDate.now());
         FlexibleTask v = new FlexibleTask("Viec A", LocalTime.of(10, 0), LocalTime.of(11, 0),
-                PriorityLevel.CO_THE_BO);   // copy đúng cách tạo như test T-20 ở trên
+                PriorityLevel.CO_THE_BO);
         ds.themItem(v);
 
         List<PhuongAn> kq = new ReplanEngine()
@@ -66,7 +66,7 @@ class ReplanEngineTest {
             assertTrue(biDoi || biBo);
         }
     }
-    @Disabled("Chờ nhóm chốt hành vi K-14: việc lỡ giờ")
+    @Disabled("Tạm hoãn - ghi trong mục hạn chế của báo cáo")
 
     @Test
     void t11_viecBatDauTruocGioHienTai_khongBiDoi() {
@@ -104,10 +104,9 @@ class ReplanEngineTest {
             sb.append("bo=").append(p.getKetQua().getDanhSachDeXuatBo().size());
             dauVan.add(sb.toString());
         }
-        dauVan.forEach(System.out::println);
         assertTrue(dauVan.size() >= 2);
     }
-    @Disabled("Chờ nhóm chốt hành vi K-14: việc lỡ giờ/dời dây chuyền")
+    @Disabled("Tạm hoãn - ghi trong mục hạn chế của báo cáo")
     @Test
     void cascade_nhieuTang_khongChongKhongVuot2359() {
         DaySchedule ds = new DaySchedule(LocalDate.now());

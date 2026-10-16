@@ -28,8 +28,9 @@ class MaTranBr05Test {
     }
 
     private static ScheduleItem deadline(PriorityLevel p) {
+        java.time.LocalDate ngay = java.time.LocalDate.now();
         return new DeadlineTask("D", LocalTime.of(9, 0), LocalTime.of(10, 0), p,
-                java.time.LocalDateTime.of(2026, 10, 12, 12, 0));
+                ngay.plusDays(1).atTime(12, 0), ngay);
     }
 
     /** Thứ tự cột: Ít thay đổi, Ưu tiên deadline, Giảm tải. */
