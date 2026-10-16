@@ -1,6 +1,6 @@
 <mxfile host="app.diagrams.net">
   <diagram name="Flow_Replan" id="d7">
-    <mxGraphModel dx="3121" dy="1703" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="2300" math="0" shadow="0">
+    <mxGraphModel dx="1493" dy="814" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="2300" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -43,10 +43,10 @@
         <mxCell id="T4b" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="Áp dụng Skip lên TOÀN BỘ danh sách (cả việc đã bắt đầu), ghi nhận &#39;đã BỎ&#39; hoặc &#39;bỏ qua hôm nay&#39;" vertex="1">
           <mxGeometry height="70" width="300" x="555" y="300" as="geometry" />
         </mxCell>
-        <mxCell id="T5" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="Tách việc theo TRẠNG THÁI thật (K-14): việc đã xong, FixedEvent đã kết thúc hoặc đang diễn ra → giữ nguyên, chặn con trỏ; việc linh hoạt chưa xong mà đã tới giờ (khi trễ) → xếp lại từ mốc sớm nhất; việc tương lai KHÔNG dời hàng loạt" vertex="1">
+        <mxCell id="T5" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="Tách việc theo TRẠNG THÁI thật: việc đã xong, FixedEvent đã kết thúc hoặc đang diễn ra → giữ nguyên, chặn con trỏ; việc linh hoạt chưa xong mà đã tới giờ (khi trễ) → xếp lại từ mốc sớm nhất; việc tương lai KHÔNG dời hàng loạt" vertex="1">
           <mxGeometry height="110" width="340" x="30" y="420" as="geometry" />
         </mxCell>
-        <mxCell id="T6" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="Hook chiến lược: Giảm tải chủ động cắt việc &#39;Có thể bỏ&#39; nếu quá tải (K-10)" vertex="1">
+        <mxCell id="T6" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="Hook chiến lược: Giảm tải chủ động cắt việc &#39;Có thể bỏ&#39; nếu quá tải&amp;nbsp;" vertex="1">
           <mxGeometry height="60" width="340" x="30" y="570" as="geometry" />
         </mxCell>
         <mxCell id="T7" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="Quét bằng CON TRỎ thời gian qua từng việc còn lại" vertex="1">
@@ -91,7 +91,7 @@
         <mxCell id="U1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="Ghép lịch sau = việc đã qua + kết quả quét" vertex="1">
           <mxGeometry height="50" width="420" x="565" y="1260" as="geometry" />
         </mxCell>
-        <mxCell id="U2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="So sánh lịch trước/sau theo ID → danh sách thay đổi (K-13); thêm cảnh báo; không đổi gì thì ghi &#39;lịch vẫn ổn&#39;" vertex="1">
+        <mxCell id="U2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="So sánh lịch trước/sau theo ID → danh sách thay đổi; thêm cảnh báo; không đổi gì thì ghi &#39;lịch vẫn ổn&#39;" vertex="1">
           <mxGeometry height="70" width="420" x="565" y="1340" as="geometry" />
         </mxCell>
         <mxCell id="U3" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="Trả KetQuaSoSanh, đóng gói thành PhuongAn (3 phương án KHÁC nhau)" vertex="1">
