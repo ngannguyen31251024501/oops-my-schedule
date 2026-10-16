@@ -35,7 +35,9 @@ public class ReplanController {
         this.layLich = layLich;
     }
 
-    /** Tạo các phương án để giao diện hiển thị. Không đổi lịch thật. */
+    /**
+     * Tạo các phương án để giao diện hiển thị. Không đổi lịch thật.
+     */
     public List<PhuongAn> taoPhuongAn(DaySchedule lichHomNay, Disruption suCo, LocalTime thoiDiemHienTai) {
         if (lichHomNay == null || suCo == null || thoiDiemHienTai == null) {
             throw new IllegalArgumentException("Thiếu dữ liệu để tạo phương án.");
@@ -43,7 +45,9 @@ public class ReplanController {
         return engine.taoCacPhuongAn(lichHomNay, suCo, thoiDiemHienTai);
     }
 
-    /** Áp dụng phương án người dùng đã chọn, ghi nhật ký rồi lưu cả hôm nay và ngày mai. */
+    /**
+     * Áp dụng phương án người dùng đã chọn, ghi nhật ký rồi lưu cả hôm nay và ngày mai.
+     */
     public KetQuaApDung apDungPhuongAn(PhuongAn phuongAn, DaySchedule lichHomNay,
                                        LocalTime thoiDiemHienTai, String tieuDeSuCo) throws IOException {
         if (phuongAn == null || lichHomNay == null || thoiDiemHienTai == null) {
@@ -59,6 +63,10 @@ public class ReplanController {
         }
 
         KetQuaApDung kq = applyService.apDung(lichHomNay, lichNgayMai, phuongAn);
+        // Việc không chuyển được sang ngày mai thì giữ lại ở lịch hôm nay, không để mất.
+        for (ScheduleItem bi : kq.getChuaXepLich()) {
+            giuLaiHomNay(lichHomNay, bi);
+        }
 
         List<String> tenChuaXep = kq.getChuaXepLich().stream().map(ScheduleItem::getTen).toList();
         lichHomNay.ghiNhatKySuCo(new SuCoNhatKy(thoiDiemHienTai, tieuDeSuCo,
@@ -67,5 +75,18 @@ public class ReplanController {
         KhoDuLieu.luuNgay(lichHomNay);
         KhoDuLieu.luuNgay(lichNgayMai);
         return kq;
+    }
+
+    /**
+     * Việc không chuyển được sang ngày mai thì giữ lại ở lịch hôm nay, không để mất.
+     */
+    static void giuLaiHomNay(DaySchedule lichHomNay, ScheduleItem bi) {
+        try {
+            if (!lichHomNay.layLichHienTai().contains(bi)) {
+                lichHomNay.themItem(bi);
+            }
+        } catch (IllegalArgumentException ignored) {
+            // trùng việc cố định: vẫn được ghi trong nhật ký sự cố + thông báo "chưa thể sắp xếp"
+        }
     }
 }
