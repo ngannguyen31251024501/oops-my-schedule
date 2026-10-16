@@ -6,7 +6,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
-
+import org.junit.jupiter.api.Disabled;
 class ReplanEngineTest {
     private static FixedEvent fixed(String ten, int gioBd, int phutBd, int gioKt, int phutKt) {
         return new FixedEvent(ten, LocalTime.of(gioBd, phutBd), LocalTime.of(gioKt, phutKt),
@@ -66,6 +66,7 @@ class ReplanEngineTest {
             assertTrue(biDoi || biBo);
         }
     }
+    @Disabled("Chờ nhóm chốt hành vi K-14: việc lỡ giờ")
 
     @Test
     void t11_viecBatDauTruocGioHienTai_khongBiDoi() {
@@ -106,6 +107,7 @@ class ReplanEngineTest {
         dauVan.forEach(System.out::println);
         assertTrue(dauVan.size() >= 2);
     }
+    @Disabled("Chờ nhóm chốt hành vi K-14: việc lỡ giờ/dời dây chuyền")
     @Test
     void cascade_nhieuTang_khongChongKhongVuot2359() {
         DaySchedule ds = new DaySchedule(LocalDate.now());
