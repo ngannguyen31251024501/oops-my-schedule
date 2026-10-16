@@ -1,5 +1,5 @@
 package com.oopsmyschedule.service;
-
+import java.time.Duration;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,7 +24,7 @@ public class ReplanApplyService {
         List<ScheduleItem> chuaXepLich = new ArrayList<>();
 
         for (ScheduleItem bi : ketQua.getDanhSachDeXuatBo()) {
-            LocalTime slot = ngayMai.timKhoangTrongDauTien(bi.layThoiLuong());
+            LocalTime slot = timKheTu(ngayMai, bi.layThoiLuong(), LocalTime.of(6, 0)); // TODO: đổi sang hàm của Manh khi merge
             if (slot == null) {
                 chuaXepLich.add(bi);
                 continue;
@@ -36,6 +36,30 @@ public class ReplanApplyService {
                 chuaXepLich.add(bi);
             }
         }
+        for (ScheduleItem v : chuaXepLich) {
+            homNay.themChuaXepLich(v);
+        }
         return new KetQuaApDung(chuyenNgayMai, chuaXepLich);
+    }
+    /** Dò khe trống LIÊN TỤC đủ dài đầu tiên kể từ tuGio, đến hết 23:59; không có thì trả null. */
+    private static LocalTime timKheTu(DaySchedule ds, Duration thoiLuong, LocalTime tuGio) {
+        long can = thoiLuong.toMinutes();
+        LocalTime conTro = tuGio;
+        for (ScheduleItem it : ds.layLichHienTai()) { // đã sắp theo giờ bắt đầu
+            if (!it.getGioKetThuc().isAfter(conTro)) {
+                continue; // việc này kết thúc trước con trỏ, bỏ qua
+            }
+            if (it.getGioBatDau().isAfter(conTro)
+                    && Duration.between(conTro, it.getGioBatDau()).toMinutes() >= can) {
+                return conTro;
+            }
+            conTro = it.getGioKetThuc();
+        }
+        LocalTime cuoiNgay = LocalTime.of(23, 59);
+        if (conTro.isBefore(cuoiNgay)
+                && Duration.between(conTro, cuoiNgay).toMinutes() >= can) {
+            return conTro;
+        }
+        return null;
     }
 }
