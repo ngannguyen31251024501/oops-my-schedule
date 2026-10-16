@@ -1,5 +1,6 @@
 package com.oopsmyschedule.ui;
-
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 /**
  * Định dạng thời lượng tính bằng phút thành chuỗi dễ đọc — vì hiển thị thẳng
  * "trễ 878 phút" nhìn rất "ghê" và khó hình dung, trong khi "14 giờ 38 phút"
@@ -42,5 +43,12 @@ public final class DinhDang {
             return text;
         }
         return text.substring(0, Math.max(0, doDaiToiDa - 1)).trim() + "…";
+    }
+
+    /** Định dạng giờ hiển thị gọn "HH:mm" (bỏ giây và phần lẻ). */
+    private static final DateTimeFormatter GIO = DateTimeFormatter.ofPattern("HH:mm");
+
+    public static String gio(LocalTime thoiGian) {
+        return thoiGian == null ? "" : thoiGian.format(GIO);
     }
 }
