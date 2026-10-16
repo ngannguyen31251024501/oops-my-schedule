@@ -618,7 +618,7 @@ public class KiemThu {
             + ", coTrongDeXuatBo=" + coTrongDeXuatBo + ", deXuat=" + deXuat + ", thayDoi=" + kq.getDanhSachThayDoi());
     }
 
-    /** VAL-14 — Input null (SkipDisruption/ReplanEngine/DaySchedule) phải reject sớm bằng NullPointerException, không âm thầm bỏ qua. */
+    /** VAL-14 — Input null (SkipDisruption/ReplanEngine/DaySchedule) phải reject sớm (SkipDisruption/DaySchedule ném NullPointerException, ReplanEngine ném IllegalArgumentException), không âm thầm bỏ qua. */
     private static void val14_NullInvalid_SkipDisruptionVaReplanEngineVaDaySchedule() {
         boolean skipRejectNull = false;
         try {
@@ -632,7 +632,7 @@ public class KiemThu {
         boolean engineRejectNull = false;
         try {
             new ReplanEngine().taoCacPhuongAn(null, new DelayDisruption(5), LocalTime.now());
-        } catch (NullPointerException e) {
+        } catch (IllegalArgumentException e) {
             engineRejectNull = true;
         } catch (Exception e) {
             // sai loại exception
@@ -648,8 +648,8 @@ public class KiemThu {
         }
 
         assertTrue("VAL-14", skipRejectNull && engineRejectNull && dsRejectNull,
-            "SkipDisruption(null)/ReplanEngine.taoCacPhuongAn(null,...)/new DaySchedule(null) đều phải ném "
-            + "NullPointerException ngay lập tức, không được âm thầm bỏ qua. skip=" + skipRejectNull
+            "SkipDisruption(null)/ReplanEngine.taoCacPhuongAn(null,...)/new DaySchedule(null) phải bị từ chối ngay "
+            + "(NPE hoặc IllegalArgumentException như trên), không được âm thầm bỏ qua. skip=" + skipRejectNull
             + ", engine=" + engineRejectNull + ", ds=" + dsRejectNull);
     }
 
