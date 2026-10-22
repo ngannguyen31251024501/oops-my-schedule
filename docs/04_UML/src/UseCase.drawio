@@ -1,6 +1,6 @@
 <mxfile host="app.diagrams.net">
   <diagram name="UseCase" id="uc">
-    <mxGraphModel dx="2123" dy="993" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="1000" pageHeight="800" background="light-dark(#EAF2FB,#121212)" math="0" shadow="0">
+    <mxGraphModel dx="1761" dy="784" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="1000" pageHeight="800" background="light-dark(#EAF2FB,#121212)" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -37,7 +37,7 @@
         <mxCell id="uc5" parent="1" style="ellipse;whiteSpace=wrap;html=1;fontSize=16;fontColor=#1f2d3d;strokeColor=#d35400;strokeWidth=2;fillColor=#ffe8cc;shadow=1;fontFamily=Times New Roman;" value="&lt;b&gt;UC-05&lt;/b&gt; Báo sự cố&lt;br&gt;(FR-05)" vertex="1">
           <mxGeometry height="76" width="250" x="575" y="167" as="geometry" />
         </mxCell>
-        <mxCell id="2wD-SZjj-NIblnwKTms--2" edge="1" parent="1" source="uc6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="uc7" value="">
+        <mxCell id="G7C6uuNyAAFIN3jNiHLi-1" edge="1" parent="1" source="uc6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;dashed=1;fontColor=#D35400;fontStyle=1;fontSize=13;strokeColor=#D35400;" target="uc5" value="&amp;lt;&amp;lt;extend&amp;gt;&amp;gt;">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="uc6" parent="1" style="ellipse;whiteSpace=wrap;html=1;fontSize=16;fontColor=#1f2d3d;strokeColor=#d35400;strokeWidth=2;fillColor=#ffe8cc;shadow=1;fontFamily=Times New Roman;" value="&lt;b&gt;UC-06&lt;/b&gt; Điều chỉnh lịch:&lt;br&gt;xem 3 phương án, so sánh, chọn&lt;br&gt;(FR-06, 07, 08)" vertex="1">
@@ -96,10 +96,7 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="inc1" edge="1" parent="1" source="uc5" style="html=1;rounded=0;dashed=1;dashPattern=6 4;endArrow=open;endFill=0;endSize=10;strokeWidth=2;strokeColor=#d35400;fontSize=13;fontStyle=3;fontColor=#d35400;labelBackgroundColor=#ffffff;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="uc6" value="«include»">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="inc2" edge="1" parent="1" source="uc6" style="html=1;rounded=0;dashed=1;dashPattern=6 4;endArrow=open;endFill=0;endSize=10;strokeWidth=2;strokeColor=#d35400;fontSize=13;fontStyle=3;fontColor=#d35400;labelBackgroundColor=#ffffff;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="uc7" value="«include»">
+        <mxCell id="G7C6uuNyAAFIN3jNiHLi-2" edge="1" parent="1" source="uc7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#D35400;fontColor=#D35400;" target="uc6" value="&lt;b&gt;&lt;font style=&quot;font-size: 13px; color: rgb(211, 84, 0);&quot;&gt;&amp;lt;&amp;lt;extend&amp;gt;&amp;gt;&lt;/font&gt;&lt;/b&gt;">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
       </root>
